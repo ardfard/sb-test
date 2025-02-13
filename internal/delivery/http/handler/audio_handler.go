@@ -1,9 +1,10 @@
 package handler
 
 import (
-	"audio-processor/internal/usecase"
 	"encoding/json"
 	"net/http"
+
+	"github.com/ardfard/sb-test/internal/usecase"
 )
 
 type AudioHandler struct {

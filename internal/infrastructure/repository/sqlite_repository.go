@@ -1,27 +1,24 @@
 package repository
 
 import (
-	"audio-processor/internal/domain/entity"
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
+	"github.com/ardfard/sb-test/internal/domain/entity"
+
+	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type SQLiteAudioRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 func NewSQLiteAudioRepository(dbPath string) (*SQLiteAudioRepository, error) {
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sqlx.Connect("sqlite3", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %v", err)
-	}
-
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %v", err)
 	}
 
 	if err := createTable(db); err != nil {
@@ -33,7 +30,7 @@ func NewSQLiteAudioRepository(dbPath string) (*SQLiteAudioRepository, error) {
 	}, nil
 }
 
-func createTable(db *sql.DB) error {
+func createTable(db *sqlx.DB) error {
 	query := `
 	CREATE TABLE IF NOT EXISTS audios (
 		id TEXT PRIMARY KEY,
@@ -45,7 +42,6 @@ func createTable(db *sql.DB) error {
 		updated_at DATETIME NOT NULL,
 		error TEXT
 	)`
-
 	_, err := db.Exec(query)
 	return err
 }
@@ -55,19 +51,17 @@ func (r *SQLiteAudioRepository) Store(ctx context.Context, audio *entity.Audio) 
 	INSERT INTO audios (
 		id, original_name, original_format, storage_path, 
 		status, created_at, updated_at, error
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-
-	_, err := r.db.ExecContext(ctx, query,
-		audio.ID,
-		audio.OriginalName,
-		audio.OriginalFormat,
-		audio.StoragePath,
-		audio.Status,
-		audio.CreatedAt,
-		audio.UpdatedAt,
-		audio.Error,
-	)
-
+	) VALUES (:id, :original_name, :original_format, :storage_path, :status, :created_at, :updated_at, :error)`
+	_, err := r.db.NamedExecContext(ctx, query, map[string]interface{}{
+		"id":              audio.ID,
+		"original_name":   audio.OriginalName,
+		"original_format": audio.OriginalFormat,
+		"storage_path":    audio.StoragePath,
+		"status":          audio.Status,
+		"created_at":      audio.CreatedAt.Format(time.RFC3339),
+		"updated_at":      audio.UpdatedAt.Format(time.RFC3339),
+		"error":           audio.Error,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to store audio: %v", err)
 	}
@@ -77,62 +71,36 @@ func (r *SQLiteAudioRepository) Store(ctx context.Context, audio *entity.Audio) 
 
 func (r *SQLiteAudioRepository) GetByID(ctx context.Context, id string) (*entity.Audio, error) {
 	query := `
-	SELECT id, original_name, original_format, storage_path, 
-	       status, created_at, updated_at, error
+	SELECT id, original_name, original_format, storage_path, status, created_at, updated_at, error
 	FROM audios WHERE id = ?`
-
-	row := r.db.QueryRowContext(ctx, query, id)
-
 	audio := &entity.Audio{}
-	var createdAt, updatedAt string
-
-	err := row.Scan(
-		&audio.ID,
-		&audio.OriginalName,
-		&audio.OriginalFormat,
-		&audio.StoragePath,
-		&audio.Status,
-		&createdAt,
-		&updatedAt,
-		&audio.Error,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("audio not found: %s", id)
+	if err := r.db.GetContext(ctx, audio, query, id); err != nil {
+		return nil, fmt.Errorf("failed to get audio: %v", err)
 	}
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to scan audio: %v", err)
-	}
-
-	// Parse time strings
-	audio.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
-	audio.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
-
 	return audio, nil
 }
 
 func (r *SQLiteAudioRepository) Update(ctx context.Context, audio *entity.Audio) error {
 	query := `
 	UPDATE audios 
-	SET original_name = ?,
-		original_format = ?,
-		storage_path = ?,
-		status = ?,
-		updated_at = ?,
-		error = ?
-	WHERE id = ?`
-
-	result, err := r.db.ExecContext(ctx, query,
-		audio.OriginalName,
-		audio.OriginalFormat,
-		audio.StoragePath,
-		audio.Status,
-		time.Now(),
-		audio.Error,
-		audio.ID,
-	)
-
+	SET original_name = :original_name,
+		original_format = :original_format,
+		storage_path = :storage_path,
+		status = :status,
+		updated_at = :updated_at,
+		error = :error
+	WHERE id = :id`
+	// update the updated timestamp
+	audio.UpdatedAt = time.Now()
+	result, err := r.db.NamedExecContext(ctx, query, map[string]interface{}{
+		"id":              audio.ID,
+		"original_name":   audio.OriginalName,
+		"original_format": audio.OriginalFormat,
+		"storage_path":    audio.StoragePath,
+		"status":          audio.Status,
+		"updated_at":      audio.UpdatedAt.Format(time.RFC3339),
+		"error":           audio.Error,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to update audio: %v", err)
 	}

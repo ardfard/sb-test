@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"audio-processor/internal/domain/entity"
 	"context"
+
+	"github.com/ardfard/sb-test/internal/domain/entity"
 )
 
 type AudioRepository interface {

@@ -1,16 +1,17 @@
 package usecase
 
 import (
-	"audio-processor/internal/domain/entity"
-	"audio-processor/internal/domain/repository"
-	"audio-processor/internal/infrastructure/converter"
-	"audio-processor/internal/infrastructure/storage"
-	"audio-processor/pkg/worker"
 	"context"
 	"fmt"
 	"io"
 	"path/filepath"
 	"time"
+
+	"github.com/ardfard/sb-test/internal/domain/entity"
+	"github.com/ardfard/sb-test/internal/domain/repository"
+	"github.com/ardfard/sb-test/internal/infrastructure/converter"
+	"github.com/ardfard/sb-test/internal/infrastructure/storage"
+	"github.com/ardfard/sb-test/pkg/worker"
 
 	"github.com/google/uuid"
 )

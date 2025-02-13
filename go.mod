@@ -4,7 +4,10 @@ go 1.22
 
 toolchain go1.23.6
 
-require cloud.google.com/go/storage v1.50.0
+require (
+	cloud.google.com/go/storage v1.50.0
+	github.com/jmoiron/sqlx v1.4.0
+)
 
 require (
 	cel.dev/expr v0.16.1 // indirect
@@ -26,7 +29,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
-	github.com/google/uuid v1.6.0 // indirect
+	github.com/google/uuid v1.6.0
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.0 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22

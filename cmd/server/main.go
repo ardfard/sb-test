@@ -1,19 +1,20 @@
 package main
 
 import (
-	"audio-processor/internal/delivery/http/handler"
-	"audio-processor/internal/infrastructure/converter"
-	"audio-processor/internal/infrastructure/storage"
-	"audio-processor/internal/usecase"
-	"audio-processor/pkg/worker"
 	"context"
 	"log"
 	"net/http"
 	"os"
 
-	"audio-processor/internal/infrastructure/repository"
+	"github.com/ardfard/sb-test/internal/delivery/http/handler"
+	"github.com/ardfard/sb-test/internal/infrastructure/converter"
+	"github.com/ardfard/sb-test/internal/infrastructure/storage"
+	"github.com/ardfard/sb-test/internal/usecase"
+	"github.com/ardfard/sb-test/pkg/worker"
 
-	"cloud.google.com/go/storage"
+	"github.com/ardfard/sb-test/internal/infrastructure/repository"
+
+	gcsStorage "cloud.google.com/go/storage"
 )
 
 func main() {
@@ -27,7 +28,7 @@ func main() {
 	defer repo.Close()
 
 	// Initialize GCS client
-	gcsClient, err := storage.NewClient(ctx)
+	gcsClient, err := gcsStorage.NewClient(ctx)
 	if err != nil {
 		log.Fatalf("Failed to create GCS client: %v", err)
 	}
