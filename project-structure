@@ -1,0 +1,27 @@
+audio-processor/
+├── cmd/
+│   └── server/
+│       └── main.go
+├── internal/
+│   ├── domain/
+│   │   ├── entity/
+│   │   │   └── audio.go
+│   │   └── repository/
+│   │       └── audio_repository.go
+│   ├── infrastructure/
+│   │   ├── storage/
+│   │   │   └── gcs_storage.go
+│   │   └── converter/
+│   │       └── audio_converter.go
+│   ├── usecase/
+│   │   └── audio_usecase.go
+│   └── delivery/
+│       └── http/
+│           ├── handler/
+│           │   └── audio_handler.go
+│           └── router/
+│               └── router.go
+├── pkg/
+│   └── worker/
+│       └── worker.go
+└── go.mod 
