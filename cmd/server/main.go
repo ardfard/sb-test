@@ -4,52 +4,56 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 
+	"github.com/ardfard/sb-test/config"
 	"github.com/ardfard/sb-test/internal/delivery/http/handler"
+	"github.com/ardfard/sb-test/internal/delivery/http/router"
 	"github.com/ardfard/sb-test/internal/infrastructure/converter"
+	"github.com/ardfard/sb-test/internal/infrastructure/repository"
 	"github.com/ardfard/sb-test/internal/infrastructure/storage"
 	"github.com/ardfard/sb-test/internal/usecase"
 	"github.com/ardfard/sb-test/pkg/worker"
-
-	"github.com/ardfard/sb-test/internal/infrastructure/repository"
 
 	gcsStorage "cloud.google.com/go/storage"
 )
 
 func main() {
+	// Load configuration using Viper
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
+
 	ctx := context.Background()
 
-	// Initialize SQLite repository
-	repo, err := repository.NewSQLiteAudioRepository("./audio.db")
+	// Initialize SQLite repository using configuration
+	repo, err := repository.NewSQLiteAudioRepository(cfg.SQLite.DBPath)
 	if err != nil {
 		log.Fatalf("Failed to create repository: %v", err)
 	}
 	defer repo.Close()
 
-	// Initialize GCS client
+	// Initialize GCS client from configuration
 	gcsClient, err := gcsStorage.NewClient(ctx)
 	if err != nil {
 		log.Fatalf("Failed to create GCS client: %v", err)
 	}
 	defer gcsClient.Close()
+	gcsStorageInstance := storage.NewGCSStorage(gcsClient, cfg.GCS.Bucket)
 
-	bucketName := os.Getenv("GCS_BUCKET_NAME")
-	gcsStorage := storage.NewGCSStorage(gcsClient, bucketName)
+	// Initialize components using configuration values
+	converterInstance := converter.NewAudioConverter()
+	workerInstance := worker.NewWorker(cfg.Worker.NumWorkers)
 
-	// Initialize components
-	converter := converter.NewAudioConverter()
-	worker := worker.NewWorker(5) // 5 concurrent workers
-
-	// Initialize use case
-	useCase := usecase.NewAudioUseCase(repo, gcsStorage, converter, worker)
+	// Initialize use case with our components
+	useCase := usecase.NewAudioUseCase(repo, gcsStorageInstance, converterInstance, workerInstance)
 
 	// Initialize handler
 	audioHandler := handler.NewAudioHandler(useCase)
 
-	// Setup routes
-	http.HandleFunc("/upload", audioHandler.UploadAudio)
+	// Initialize the router with all defined routes.
+	r := router.SetupRoutes(audioHandler)
 
-	// Start server
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// Start server using address from configuration
+	log.Fatal(http.ListenAndServe(cfg.ServerAddress, r))
 }

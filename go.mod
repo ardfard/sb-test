@@ -7,6 +7,7 @@ toolchain go1.23.6
 require (
 	cloud.google.com/go/storage v1.50.0
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/spf13/viper v1.16.0
 )
 
 require (
