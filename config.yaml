@@ -1,0 +1,7 @@
+server_address: ":8080"
+gcs:
+  bucket: "your-bucket-name"
+sqlite:
+  db_path: "./audio.db"
+worker:
+  num_workers: 5 
