@@ -20,4 +20,6 @@ type Audio struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	Error          string
+	UserID         string
+	PhraseID       string
 }

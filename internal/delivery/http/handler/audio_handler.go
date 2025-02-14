@@ -7,16 +7,19 @@ import (
 	"github.com/ardfard/sb-test/internal/usecase"
 )
 
+// AudioHandler is a handler for audio-related operations.
 type AudioHandler struct {
 	useCase *usecase.AudioUseCase
 }
 
+// NewAudioHandler creates a new AudioHandler with the given use case.
 func NewAudioHandler(useCase *usecase.AudioUseCase) *AudioHandler {
 	return &AudioHandler{
 		useCase: useCase,
 	}
 }
 
+// UploadAudio handles the upload of an audio file.
 func (h *AudioHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

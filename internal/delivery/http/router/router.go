@@ -4,16 +4,15 @@ import (
 	"net/http"
 
 	"github.com/ardfard/sb-test/internal/delivery/http/handler"
-	"github.com/gorilla/mux" // Alternatively, you can use the standard net/http
+	"github.com/gorilla/mux"
 )
 
 // SetupRoutes sets up all the HTTP routes for the application.
 func SetupRoutes(audioHandler *handler.AudioHandler) *mux.Router {
 	router := mux.NewRouter()
 
-	// Define your routes here:
-	router.HandleFunc("/upload", audioHandler.UploadAudio).Methods(http.MethodPost)
-	// Add more routes as the application evolves.
+	router.HandleFunc("/audio/user/{user_id}/phrase/{phrase_id}", audioHandler.UploadAudio).Methods(http.MethodPost)
+	// router.HandleFunc("/audio/user/{user_id}/phrase/{phrase_id}", audioHandler.GetAudio).Methods(http.MethodGet)
 
 	return router
 }
