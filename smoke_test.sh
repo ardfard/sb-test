@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 API_URL="http://localhost:8080/upload"
-TEST_AUDIO_FILE="test.wav"
+TEST_AUDIO_FILE="test.m4a"
 
 if [[ ! -f "$TEST_AUDIO_FILE" ]]; then
     echo "Test audio file '$TEST_AUDIO_FILE' not found. Please make sure it exists."
