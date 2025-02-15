@@ -17,12 +17,7 @@ type SQLiteAudioRepository struct {
 }
 
 // NewSQLiteAudioRepository creates a new SQLiteAudioRepository.
-func NewSQLiteAudioRepository(dbPath string) (*SQLiteAudioRepository, error) {
-	db, err := sqlx.Connect("sqlite3", dbPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %v", err)
-	}
-
+func NewSQLiteAudioRepository(db *sqlx.DB) (*SQLiteAudioRepository, error) {
 	if err := createTable(db); err != nil {
 		return nil, fmt.Errorf("failed to create table: %v", err)
 	}

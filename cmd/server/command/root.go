@@ -8,10 +8,11 @@ import (
 	"github.com/ardfard/sb-test/internal/delivery/http/handler"
 	"github.com/ardfard/sb-test/internal/delivery/http/router"
 	"github.com/ardfard/sb-test/internal/infrastructure/converter"
+	"github.com/ardfard/sb-test/internal/infrastructure/database"
+	"github.com/ardfard/sb-test/internal/infrastructure/queue"
 	"github.com/ardfard/sb-test/internal/infrastructure/repository"
 	"github.com/ardfard/sb-test/internal/infrastructure/storage"
 	"github.com/ardfard/sb-test/internal/usecase"
-	"github.com/ardfard/sb-test/pkg/worker"
 	"github.com/spf13/cobra"
 
 	"context"
@@ -45,12 +46,18 @@ func run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error loading config: %v", err)
 	}
 
+	// Initialize database
+	db, err := database.InitDB(cfg.SQLite.DBPath)
+	if err != nil {
+		return fmt.Errorf("failed to initialize database: %v", err)
+	}
+	defer db.Close()
+
 	// Initialize SQLite repository using configuration
-	repo, err := repository.NewSQLiteAudioRepository(cfg.SQLite.DBPath)
+	repo, err := repository.NewSQLiteAudioRepository(db)
 	if err != nil {
 		return fmt.Errorf("failed to create repository: %v", err)
 	}
-	defer repo.Close()
 
 	// Initialize storage using configuration
 	storageInstance, err := storage.NewStorage(&cfg.Storage)
@@ -60,13 +67,17 @@ func run(cmd *cobra.Command, args []string) error {
 
 	// Initialize other components using configuration values.
 	converterInstance := converter.NewAudioConverter()
-	workerInstance := worker.NewWorker(cfg.Worker.NumWorkers)
+
+	queueInstance, err := queue.NewSQLiteQueue(db)
+	if err != nil {
+		return fmt.Errorf("failed to create queue: %v", err)
+	}
 
 	// Initialize use case with our components.
-	useCase := usecase.NewAudioUseCase(repo, storageInstance, converterInstance, workerInstance)
+	uploadAudioUseCase := usecase.NewUploadAudioUseCase(repo, storageInstance, queueInstance)
 
 	// Initialize handler.
-	audioHandler := handler.NewAudioHandler(useCase)
+	audioHandler := handler.NewAudioHandler(uploadAudioUseCase)
 
 	// Initialize the router with all defined routes.
 	r := router.SetupRoutes(audioHandler)
@@ -88,6 +99,7 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
+	// Start worker
 	// Start server
 	log.Printf("Starting server on %s", cfg.ServerAddress)
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {

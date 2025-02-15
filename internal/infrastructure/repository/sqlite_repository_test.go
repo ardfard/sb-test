@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ardfard/sb-test/internal/domain/entity"
+	"github.com/ardfard/sb-test/internal/infrastructure/database"
 )
 
 func TestSQLiteAudioRepository(t *testing.T) {
@@ -112,7 +113,11 @@ func TestSQLiteAudioRepository(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Using in-memory SQLite DB for each test
-			repo, err := NewSQLiteAudioRepository(":memory:")
+			db, err := database.InitDB(":memory:")
+			if err != nil {
+				t.Fatalf("failed to create repository: %v", err)
+			}
+			repo, err := NewSQLiteAudioRepository(db)
 			if err != nil {
 				t.Fatalf("failed to create repository: %v", err)
 			}
