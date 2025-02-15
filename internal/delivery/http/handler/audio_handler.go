@@ -41,8 +41,11 @@ func (h *AudioHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 
 	// Return JSON response with audio ID and status
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"id":     audio.ID,
 		"status": audio.Status,
-	})
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

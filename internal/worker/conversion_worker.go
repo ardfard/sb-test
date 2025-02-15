@@ -64,7 +64,9 @@ func (w *ConversionWorker) processNextMessage() (err error) {
 	task, err := w.queue.Dequeue(ctx)
 	defer func() {
 		if err != nil {
-			w.queue.Fail(ctx, task.ID, err.Error())
+			if err := w.queue.Fail(ctx, task.ID, err.Error()); err != nil {
+				log.Printf("failed to fail task: %v", err)
+			}
 		}
 	}()
 

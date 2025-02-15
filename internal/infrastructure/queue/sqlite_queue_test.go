@@ -118,6 +118,8 @@ func TestSQLiteQueueOperations(t *testing.T) {
 	t.Run("dequeue from empty queue", func(t *testing.T) {
 		queueName := fmt.Sprintf("test_queue_%s_empty", t.Name())
 		queue, err := NewSQLiteQueue(db, queueName)
+		require.NoError(t, err)
+
 		// Try to dequeue from empty queue with short timeout
 		timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
@@ -129,6 +131,8 @@ func TestSQLiteQueueOperations(t *testing.T) {
 	t.Run("multiple enqueue and dequeue", func(t *testing.T) {
 		queueName := fmt.Sprintf("test_queue_%s_multiple", t.Name())
 		queue, err := NewSQLiteQueue(db, queueName)
+		require.NoError(t, err)
+
 		payloads := []uint{1, 2, 3, 4, 5}
 
 		// Enqueue multiple tasks

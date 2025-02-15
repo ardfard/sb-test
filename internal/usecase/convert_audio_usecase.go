@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -100,6 +101,8 @@ func (uc *ConvertAudioUseCase) Convert(ctx context.Context, audioID uint) error 
 func (uc *ConvertAudioUseCase) handleError(ctx context.Context, audio *entity.Audio, errMsg string) error {
 	audio.Status = entity.AudioStatusFailed
 	audio.Error = errMsg
-	uc.repo.Update(ctx, audio)
-	return fmt.Errorf(errMsg)
+	if err := uc.repo.Update(ctx, audio); err != nil {
+		return fmt.Errorf("failed to update audio status: %v", err)
+	}
+	return errors.New(errMsg)
 }
