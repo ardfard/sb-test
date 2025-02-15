@@ -6,13 +6,25 @@ import (
 	"github.com/spf13/viper"
 )
 
+// StorageConfig holds settings for the storage backend.
+type StorageConfig struct {
+	Type string `mapstructure:"type"` // Allowed values: "gcs", "s3", "local"
+	S3   struct {
+		Bucket          string `mapstructure:"bucket"`
+		Region          string `mapstructure:"region"`
+		AccessKeyID     string `mapstructure:"access_key_id"`
+		SecretAccessKey string `mapstructure:"secret_access_key"`
+	} `mapstructure:"s3"`
+	Local struct {
+		Directory string `mapstructure:"directory"`
+	} `mapstructure:"local"`
+}
+
 // Config holds configuration values for the application.
 type Config struct {
-	ServerAddress string `mapstructure:"server_address"`
-	GCS           struct {
-		Bucket string `mapstructure:"bucket"`
-	} `mapstructure:"gcs"`
-	SQLite struct {
+	ServerAddress string        `mapstructure:"server_address"`
+	Storage       StorageConfig `mapstructure:"storage"`
+	SQLite        struct {
 		DBPath string `mapstructure:"db_path"`
 	} `mapstructure:"sqlite"`
 	Worker struct {

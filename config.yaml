@@ -1,7 +1,9 @@
 server_address: ":8080"
-gcs:
-  bucket: "your-bucket-name"
+storage:
+  type: local
+  local:
+    directory: "./uploads"
 sqlite:
   db_path: "./audio.db"
 worker:
-  num_workers: 5 
+  num_workers: 2

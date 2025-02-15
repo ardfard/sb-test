@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 
 	"github.com/ardfard/sb-test/config"
 	"github.com/ardfard/sb-test/internal/delivery/http/handler"
@@ -13,8 +15,6 @@ import (
 	"github.com/ardfard/sb-test/internal/infrastructure/storage"
 	"github.com/ardfard/sb-test/internal/usecase"
 	"github.com/ardfard/sb-test/pkg/worker"
-
-	gcsStorage "cloud.google.com/go/storage"
 )
 
 func main() {
@@ -24,8 +24,6 @@ func main() {
 		log.Fatalf("Error loading config: %v", err)
 	}
 
-	ctx := context.Background()
-
 	// Initialize SQLite repository using configuration
 	repo, err := repository.NewSQLiteAudioRepository(cfg.SQLite.DBPath)
 	if err != nil {
@@ -33,27 +31,45 @@ func main() {
 	}
 	defer repo.Close()
 
-	// Initialize GCS client from configuration
-	gcsClient, err := gcsStorage.NewClient(ctx)
+	// Initialize storage using configuration
+	storageInstance, err := storage.NewStorage(&cfg.Storage)
 	if err != nil {
-		log.Fatalf("Failed to create GCS client: %v", err)
+		log.Fatalf("Failed to create storage: %v", err)
 	}
-	defer gcsClient.Close()
-	gcsStorageInstance := storage.NewGCSStorage(gcsClient, cfg.GCS.Bucket)
 
-	// Initialize components using configuration values
+	// Initialize other components using configuration values.
 	converterInstance := converter.NewAudioConverter()
 	workerInstance := worker.NewWorker(cfg.Worker.NumWorkers)
 
-	// Initialize use case with our components
-	useCase := usecase.NewAudioUseCase(repo, gcsStorageInstance, converterInstance, workerInstance)
+	// Initialize use case with our components.
+	useCase := usecase.NewAudioUseCase(repo, storageInstance, converterInstance, workerInstance)
 
-	// Initialize handler
+	// Initialize handler.
 	audioHandler := handler.NewAudioHandler(useCase)
 
 	// Initialize the router with all defined routes.
 	r := router.SetupRoutes(audioHandler)
 
-	// Start server using address from configuration
-	log.Fatal(http.ListenAndServe(cfg.ServerAddress, r))
+	// Create server
+	srv := &http.Server{
+		Addr:    cfg.ServerAddress,
+		Handler: r,
+	}
+
+	// Handle graceful shutdown
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt)
+		<-sigChan
+		log.Println("Received interrupt signal, shutting down...")
+		if err := srv.Shutdown(context.Background()); err != nil {
+			log.Printf("HTTP server shutdown error: %v", err)
+		}
+	}()
+
+	// Start server
+	log.Printf("Starting server on %s", cfg.ServerAddress)
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		log.Fatalf("HTTP server error: %v", err)
+	}
 }

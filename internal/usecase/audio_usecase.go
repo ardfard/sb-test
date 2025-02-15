@@ -9,8 +9,8 @@ import (
 
 	"github.com/ardfard/sb-test/internal/domain/entity"
 	"github.com/ardfard/sb-test/internal/domain/repository"
+	"github.com/ardfard/sb-test/internal/domain/storage"
 	"github.com/ardfard/sb-test/internal/infrastructure/converter"
-	"github.com/ardfard/sb-test/internal/infrastructure/storage"
 	"github.com/ardfard/sb-test/pkg/worker"
 
 	"github.com/google/uuid"
@@ -18,14 +18,14 @@ import (
 
 type AudioUseCase struct {
 	repo      repository.AudioRepository
-	storage   *storage.GCSStorage
+	storage   storage.Storage
 	converter *converter.AudioConverter
 	worker    *worker.Worker
 }
 
 func NewAudioUseCase(
 	repo repository.AudioRepository,
-	storage *storage.GCSStorage,
+	storage storage.Storage,
 	converter *converter.AudioConverter,
 	worker *worker.Worker,
 ) *AudioUseCase {
@@ -45,13 +45,15 @@ func (uc *AudioUseCase) UploadAudio(ctx context.Context, filename string, conten
 		Status:         entity.AudioStatusPending,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
+		UserID:         "123",
+		PhraseID:       "456",
 	}
 
 	if err := uc.repo.Store(ctx, audio); err != nil {
 		return nil, fmt.Errorf("failed to store audio metadata: %v", err)
 	}
 
-	// Upload original file to GCS
+	// Upload original file to storage
 	originalPath := fmt.Sprintf("original/%s%s", audio.ID, audio.OriginalFormat)
 	if err := uc.storage.Upload(ctx, originalPath, content); err != nil {
 		return nil, fmt.Errorf("failed to upload original file: %v", err)
@@ -70,7 +72,6 @@ func (uc *AudioUseCase) convertAudio(ctx context.Context, audio *entity.Audio) {
 	uc.repo.Update(ctx, audio)
 
 	// Download, convert and upload logic here
-	// This is simplified - you'd need to implement temporary file handling
 	inputPath := fmt.Sprintf("/tmp/%s%s", audio.ID, audio.OriginalFormat)
 	outputPath := fmt.Sprintf("/tmp/%s.wav", audio.ID)
 
@@ -83,7 +84,6 @@ func (uc *AudioUseCase) convertAudio(ctx context.Context, audio *entity.Audio) {
 
 	wavPath := fmt.Sprintf("converted/%s.wav", audio.ID)
 	// Upload converted WAV file
-	// Update audio status to completed
 	audio.Status = entity.AudioStatusCompleted
 	audio.StoragePath = wavPath
 	uc.repo.Update(ctx, audio)
