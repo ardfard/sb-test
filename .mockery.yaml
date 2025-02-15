@@ -1,0 +1,30 @@
+with-expecter: true
+packages:
+  github.com/ardfard/sb-test/internal/domain/repository:
+    interfaces:
+      AudioRepository:
+        config:
+          dir: internal/infrastructure/repository/mocks
+          outpkg: mocks
+          filename: mock_audio_repository.go
+  github.com/ardfard/sb-test/internal/domain/storage:
+    interfaces:
+      Storage:
+        config:
+          dir: internal/infrastructure/storage/mocks
+          outpkg: mocks
+          filename: mock_storage.go
+  github.com/ardfard/sb-test/internal/domain/queue:
+    interfaces:
+      TaskQueue:
+        config:
+          dir: internal/infrastructure/queue/mocks
+          outpkg: mocks
+          filename: mock_task_queue.go
+  github.com/ardfard/sb-test/internal/domain/converter:
+    interfaces:
+      AudioConverter:
+        config:
+          dir: internal/infrastructure/converter/mocks
+          outpkg: mocks
+          filename: mock_audio_converter.go

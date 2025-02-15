@@ -6,22 +6,23 @@ import (
 	"io"
 	"os"
 
+	"github.com/ardfard/sb-test/internal/domain/converter"
 	"github.com/ardfard/sb-test/internal/domain/entity"
 	"github.com/ardfard/sb-test/internal/domain/repository"
 	"github.com/ardfard/sb-test/internal/domain/storage"
-	"github.com/ardfard/sb-test/internal/infrastructure/converter"
+	"github.com/ardfard/sb-test/pkg/util"
 )
 
 type ConvertAudioUseCase struct {
 	repo      repository.AudioRepository
 	storage   storage.Storage
-	converter *converter.AudioConverter
+	converter converter.AudioConverter
 }
 
 func NewConvertAudioUseCase(
 	repo repository.AudioRepository,
 	storage storage.Storage,
-	converter *converter.AudioConverter,
+	converter converter.AudioConverter,
 ) *ConvertAudioUseCase {
 	return &ConvertAudioUseCase{
 		repo:      repo,
@@ -43,10 +44,13 @@ func (uc *ConvertAudioUseCase) Convert(ctx context.Context, audioID uint) error 
 	}
 
 	// Create temporary files
-	inputPath := fmt.Sprintf("/tmp/%d%s", audio.ID, audio.OriginalFormat)
-	outputPath := fmt.Sprintf("/tmp/%d.wav", audio.ID)
+	inputPath, outputPath, err := util.CreateTemporaryFiles(audio, "flac")
 	defer os.Remove(inputPath)
 	defer os.Remove(outputPath)
+
+	if err != nil {
+		return uc.handleError(ctx, audio, fmt.Sprintf("failed to create temporary files: %v", err))
+	}
 
 	// Download original file
 	reader, err := uc.storage.Download(ctx, audio.StoragePath)
@@ -67,7 +71,7 @@ func (uc *ConvertAudioUseCase) Convert(ctx context.Context, audioID uint) error 
 	}
 
 	// Convert the audio
-	if err := uc.converter.ConvertToWAV(ctx, inputPath, outputPath); err != nil {
+	if err := uc.converter.Convert(ctx, inputPath, outputPath, "flac"); err != nil {
 		return uc.handleError(ctx, audio, fmt.Sprintf("failed to convert audio: %v", err))
 	}
 
