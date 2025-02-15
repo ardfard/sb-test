@@ -9,68 +9,123 @@ import (
 )
 
 func TestSQLiteAudioRepository(t *testing.T) {
-	ctx := context.Background()
-
-	// Using in-memory SQLite DB for testing.
-	repo, err := NewSQLiteAudioRepository(":memory:")
-	if err != nil {
-		t.Fatalf("failed to create repository: %v", err)
+	tests := []struct {
+		name    string
+		setup   func(*SQLiteAudioRepository) (*entity.Audio, error)
+		check   func(*testing.T, *SQLiteAudioRepository, *entity.Audio)
+		wantErr bool
+	}{
+		{
+			name: "Store and retrieve audio",
+			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
+				audio := &entity.Audio{
+					ID:             1,
+					OriginalName:   "test.m4a",
+					OriginalFormat: ".m4a",
+					StoragePath:    "original/test.m4a",
+					Status:         entity.AudioStatusPending,
+					CreatedAt:      time.Now().UTC(),
+					UpdatedAt:      time.Now().UTC(),
+					UserID:         1,
+					PhraseID:       1,
+				}
+				err := repo.Store(context.Background(), audio)
+				return audio, err
+			},
+			check: func(t *testing.T, repo *SQLiteAudioRepository, audio *entity.Audio) {
+				stored, err := repo.GetByID(context.Background(), audio.ID)
+				if err != nil {
+					t.Fatalf("GetByID failed: %v", err)
+				}
+				if stored.ID != audio.ID || stored.OriginalName != audio.OriginalName {
+					t.Errorf("Stored audio mismatch:\ngot  %+v\nwant %+v", stored, audio)
+				}
+			},
+			wantErr: false,
+		},
+		{
+			name: "Update audio status",
+			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
+				audio := &entity.Audio{
+					ID:             2,
+					OriginalName:   "test2.m4a",
+					OriginalFormat: ".m4a",
+					StoragePath:    "original/test2.m4a",
+					Status:         entity.AudioStatusPending,
+					CreatedAt:      time.Now().UTC(),
+					UpdatedAt:      time.Now().UTC(),
+					UserID:         1,
+					PhraseID:       1,
+				}
+				if err := repo.Store(context.Background(), audio); err != nil {
+					return nil, err
+				}
+				audio.Status = entity.AudioStatusCompleted
+				audio.StoragePath = "converted/test2.wav"
+				err := repo.Update(context.Background(), audio)
+				return audio, err
+			},
+			check: func(t *testing.T, repo *SQLiteAudioRepository, audio *entity.Audio) {
+				updated, err := repo.GetByID(context.Background(), audio.ID)
+				if err != nil {
+					t.Fatalf("GetByID after update failed: %v", err)
+				}
+				if updated.Status != entity.AudioStatusCompleted || updated.StoragePath != "converted/test2.wav" {
+					t.Errorf("Updated audio mismatch:\ngot  %+v\nwant status=%s, storagePath=%s",
+						updated, entity.AudioStatusCompleted, "converted/test2.wav")
+				}
+			},
+			wantErr: false,
+		},
+		{
+			name: "Get non-existent audio",
+			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
+				return &entity.Audio{ID: 9999}, nil
+			},
+			check: func(t *testing.T, repo *SQLiteAudioRepository, audio *entity.Audio) {
+				_, err := repo.GetByID(context.Background(), audio.ID)
+				if err == nil {
+					t.Error("expected error when fetching nonexistent audio, got nil")
+				}
+			},
+			wantErr: false,
+		},
+		{
+			name: "Update non-existent audio",
+			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
+				audio := &entity.Audio{
+					ID:             9999,
+					OriginalName:   "nonexistent.m4a",
+					OriginalFormat: ".m4a",
+					Status:         entity.AudioStatusCompleted,
+				}
+				err := repo.Update(context.Background(), audio)
+				return audio, err
+			},
+			check: func(t *testing.T, repo *SQLiteAudioRepository, audio *entity.Audio) {
+				// No additional checks needed as we expect the setup to fail
+			},
+			wantErr: true,
+		},
 	}
-	defer repo.Close()
 
-	now := time.Now().UTC()
-	audio := &entity.Audio{
-		ID:             "test-audio-id",
-		OriginalName:   "test.wav",
-		OriginalFormat: ".wav",
-		Status:         entity.AudioStatusPending,
-		CreatedAt:      now,
-		UpdatedAt:      now,
-		Error:          "",
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Using in-memory SQLite DB for each test
+			repo, err := NewSQLiteAudioRepository(":memory:")
+			if err != nil {
+				t.Fatalf("failed to create repository: %v", err)
+			}
+			defer repo.Close()
 
-	// Test storing an audio record.
-	if err := repo.Store(ctx, audio); err != nil {
-		t.Fatalf("Store failed: %v", err)
-	}
-
-	// Test retrieving the stored audio.
-	stored, err := repo.GetByID(ctx, audio.ID)
-	if err != nil {
-		t.Fatalf("GetByID failed: %v", err)
-	}
-
-	if stored.ID != audio.ID || stored.OriginalName != audio.OriginalName || stored.Status != audio.Status {
-		t.Errorf("Stored audio mismatch:\ngot  %+v\nwant %+v", stored, audio)
-	}
-
-	// Test updating the audio record.
-	audio.Status = entity.AudioStatusCompleted
-	audio.StoragePath = "converted/test.wav"
-	if err := repo.Update(ctx, audio); err != nil {
-		t.Fatalf("Update failed: %v", err)
-	}
-
-	updated, err := repo.GetByID(ctx, audio.ID)
-	if err != nil {
-		t.Fatalf("GetByID after update failed: %v", err)
-	}
-
-	if updated.Status != entity.AudioStatusCompleted || updated.StoragePath != "converted/test.wav" {
-		t.Errorf("Updated audio mismatch:\ngot  %+v\nwant status=%s, storagePath=%s", updated, entity.AudioStatusCompleted, "converted/test.wav")
-	}
-}
-
-func TestGetNonExistentAudio(t *testing.T) {
-	ctx := context.Background()
-	repo, err := NewSQLiteAudioRepository(":memory:")
-	if err != nil {
-		t.Fatalf("failed to create repository: %v", err)
-	}
-	defer repo.Close()
-
-	_, err = repo.GetByID(ctx, "nonexistent")
-	if err == nil {
-		t.Fatal("expected error when fetching nonexistent audio, got nil")
+			audio, err := tt.setup(repo)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("setup error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil {
+				tt.check(t, repo, audio)
+			}
+		})
 	}
 }

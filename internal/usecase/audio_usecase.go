@@ -12,8 +12,6 @@ import (
 	"github.com/ardfard/sb-test/internal/domain/storage"
 	"github.com/ardfard/sb-test/internal/infrastructure/converter"
 	"github.com/ardfard/sb-test/pkg/worker"
-
-	"github.com/google/uuid"
 )
 
 type AudioUseCase struct {
@@ -39,14 +37,14 @@ func NewAudioUseCase(
 
 func (uc *AudioUseCase) UploadAudio(ctx context.Context, filename string, content io.Reader) (*entity.Audio, error) {
 	audio := &entity.Audio{
-		ID:             generateID(),
+		ID:             generateUintID(),
 		OriginalName:   filename,
 		OriginalFormat: filepath.Ext(filename),
 		Status:         entity.AudioStatusPending,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
-		UserID:         "123",
-		PhraseID:       "456",
+		UserID:         123,
+		PhraseID:       456,
 	}
 
 	if err := uc.repo.Store(ctx, audio); err != nil {
@@ -54,7 +52,7 @@ func (uc *AudioUseCase) UploadAudio(ctx context.Context, filename string, conten
 	}
 
 	// Upload original file to storage
-	originalPath := fmt.Sprintf("original/%s%s", audio.ID, audio.OriginalFormat)
+	originalPath := fmt.Sprintf("original/%d%s", audio.ID, audio.OriginalFormat)
 	if err := uc.storage.Upload(ctx, originalPath, content); err != nil {
 		return nil, fmt.Errorf("failed to upload original file: %v", err)
 	}
@@ -72,8 +70,8 @@ func (uc *AudioUseCase) convertAudio(ctx context.Context, audio *entity.Audio) {
 	uc.repo.Update(ctx, audio)
 
 	// Download, convert and upload logic here
-	inputPath := fmt.Sprintf("/tmp/%s%s", audio.ID, audio.OriginalFormat)
-	outputPath := fmt.Sprintf("/tmp/%s.wav", audio.ID)
+	inputPath := fmt.Sprintf("/tmp/%d%s", audio.ID, audio.OriginalFormat)
+	outputPath := fmt.Sprintf("/tmp/%d.wav", audio.ID)
 
 	if err := uc.converter.ConvertToWAV(ctx, inputPath, outputPath); err != nil {
 		audio.Status = entity.AudioStatusFailed
@@ -82,13 +80,13 @@ func (uc *AudioUseCase) convertAudio(ctx context.Context, audio *entity.Audio) {
 		return
 	}
 
-	wavPath := fmt.Sprintf("converted/%s.wav", audio.ID)
+	wavPath := fmt.Sprintf("converted/%d.wav", audio.ID)
 	// Upload converted WAV file
 	audio.Status = entity.AudioStatusCompleted
 	audio.StoragePath = wavPath
 	uc.repo.Update(ctx, audio)
 }
 
-func generateID() string {
-	return uuid.New().String()
+func generateUintID() uint {
+	return uint(time.Now().UnixNano())
 }
