@@ -9,11 +9,11 @@ import (
 
 // AudioHandler is a handler for audio-related operations.
 type AudioHandler struct {
-	useCase *usecase.AudioUseCase
+	useCase *usecase.UploadAudioUseCase
 }
 
 // NewAudioHandler creates a new AudioHandler with the given use case.
-func NewAudioHandler(useCase *usecase.AudioUseCase) *AudioHandler {
+func NewAudioHandler(useCase *usecase.UploadAudioUseCase) *AudioHandler {
 	return &AudioHandler{
 		useCase: useCase,
 	}
@@ -33,7 +33,7 @@ func (h *AudioHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	audio, err := h.useCase.UploadAudio(r.Context(), header.Filename, file)
+	audio, err := h.useCase.Upload(r.Context(), header.Filename, file)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
