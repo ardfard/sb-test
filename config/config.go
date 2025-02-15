@@ -6,18 +6,22 @@ import (
 	"github.com/spf13/viper"
 )
 
+type LocalStorageConfig struct {
+	Directory string `mapstructure:"directory"`
+}
+
+type S3StorageConfig struct {
+	Bucket          string `mapstructure:"bucket"`
+	Region          string `mapstructure:"region"`
+	AccessKeyID     string `mapstructure:"access_key_id"`
+	SecretAccessKey string `mapstructure:"secret_access_key"`
+}
+
 // StorageConfig holds settings for the storage backend.
 type StorageConfig struct {
-	Type string `mapstructure:"type"` // Allowed values: "gcs", "s3", "local"
-	S3   struct {
-		Bucket          string `mapstructure:"bucket"`
-		Region          string `mapstructure:"region"`
-		AccessKeyID     string `mapstructure:"access_key_id"`
-		SecretAccessKey string `mapstructure:"secret_access_key"`
-	} `mapstructure:"s3"`
-	Local struct {
-		Directory string `mapstructure:"directory"`
-	} `mapstructure:"local"`
+	Type  string              `mapstructure:"type"` // Allowed values: "gcs", "s3", "local"
+	S3    *S3StorageConfig    `mapstructure:"s3"`
+	Local *LocalStorageConfig `mapstructure:"local"`
 }
 
 // Config holds configuration values for the application.
