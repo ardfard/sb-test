@@ -33,13 +33,9 @@ type Config struct {
 }
 
 // LoadConfig reads configuration from config.yaml (or other supported formats) in the current directory.
-func LoadConfig() (*Config, error) {
+func LoadConfig(configPath string) (*Config, error) {
 	// Set the name of the config file (without extension)
-	viper.SetConfigName("config")
-	// Set the config type (YAML in this example)
-	viper.SetConfigType("yaml")
-	// Look for the config file in the current directory.
-	viper.AddConfigPath(".")
+	viper.SetConfigFile(configPath)
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
