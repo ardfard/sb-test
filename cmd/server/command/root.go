@@ -13,6 +13,7 @@ import (
 	"github.com/ardfard/sb-test/internal/infrastructure/repository"
 	"github.com/ardfard/sb-test/internal/infrastructure/storage"
 	"github.com/ardfard/sb-test/internal/usecase"
+	"github.com/ardfard/sb-test/internal/worker"
 	"github.com/spf13/cobra"
 
 	"context"
@@ -68,13 +69,14 @@ func run(cmd *cobra.Command, args []string) error {
 	// Initialize other components using configuration values.
 	converterInstance := converter.NewAudioConverter()
 
-	queueInstance, err := queue.NewSQLiteQueue(db)
+	queueInstance, err := queue.NewSQLiteQueue(db, "audio_conversion")
 	if err != nil {
 		return fmt.Errorf("failed to create queue: %v", err)
 	}
 
-	// Initialize use case with our components.
+	// Initialize use cases
 	uploadAudioUseCase := usecase.NewUploadAudioUseCase(repo, storageInstance, queueInstance)
+	convertAudioUseCase := usecase.NewConvertAudioUseCase(repo, storageInstance, converterInstance)
 
 	// Initialize handler.
 	audioHandler := handler.NewAudioHandler(uploadAudioUseCase)
@@ -100,7 +102,11 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 
 	// Start worker
-	// Start server
+	conversionWorker := worker.NewConversionWorker(queueInstance, convertAudioUseCase)
+	conversionWorker.Start()
+	defer conversionWorker.Stop()
+
+	// Start server and block until it's closed.
 	log.Printf("Starting server on %s", cfg.ServerAddress)
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		return fmt.Errorf("HTTP server error: %v", err)

@@ -53,7 +53,7 @@ func (uc *UploadAudioUseCase) Upload(ctx context.Context, filename string, conte
 	}
 
 	// Enqueue conversion task
-	if err := uc.queue.Enqueue(ctx, "audio_conversion", audio.ID); err != nil {
+	if err := uc.queue.Enqueue(ctx, audio.ID); err != nil {
 		return nil, fmt.Errorf("failed to enqueue conversion: %v", err)
 	}
 

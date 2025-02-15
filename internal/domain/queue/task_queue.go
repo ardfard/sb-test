@@ -18,10 +18,10 @@ type Task struct {
 // TaskQueue defines the interface for a task queue implementation
 type TaskQueue interface {
 	// Enqueue adds a new task to the queue
-	Enqueue(ctx context.Context, taskType string, payload uint) error
+	Enqueue(ctx context.Context, payload uint) error
 
 	// Dequeue retrieves and claims the next available task
-	Dequeue(ctx context.Context, taskType string) (*Task, error)
+	Dequeue(ctx context.Context) (*Task, error)
 
 	// Complete marks a task as completed
 	Complete(ctx context.Context, taskID string) error

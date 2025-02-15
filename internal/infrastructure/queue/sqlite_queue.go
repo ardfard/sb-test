@@ -22,7 +22,7 @@ type SQLiteQueue struct {
 }
 
 // NewSQLiteQueue creates a new SQLiteQueue
-func NewSQLiteQueue(db *sqlx.DB) (*SQLiteQueue, error) {
+func NewSQLiteQueue(db *sqlx.DB, queueName string) (*SQLiteQueue, error) {
 	// Convert sqlx.DB to sql.DB since goqite expects sql.DB
 	sqlDB := db.DB
 
@@ -35,7 +35,7 @@ func NewSQLiteQueue(db *sqlx.DB) (*SQLiteQueue, error) {
 	// Create a new queue named "audio_conversion" with default settings
 	q := goqite.New(goqite.NewOpts{
 		DB:   sqlDB,
-		Name: "audio_conversion",
+		Name: queueName,
 	})
 
 	return &SQLiteQueue{
@@ -44,7 +44,7 @@ func NewSQLiteQueue(db *sqlx.DB) (*SQLiteQueue, error) {
 	}, nil
 }
 
-func (q *SQLiteQueue) Enqueue(ctx context.Context, queueName string, payload uint) error {
+func (q *SQLiteQueue) Enqueue(ctx context.Context, payload uint) error {
 	err := q.queue.Send(ctx, goqite.Message{
 		Body: []byte(fmt.Sprintf("%d", payload)),
 	})
@@ -55,7 +55,7 @@ func (q *SQLiteQueue) Enqueue(ctx context.Context, queueName string, payload uin
 }
 
 // Dequeue gets a task from the queue
-func (q *SQLiteQueue) Dequeue(ctx context.Context, queueName string) (*queue.Task, error) {
+func (q *SQLiteQueue) Dequeue(ctx context.Context) (*queue.Task, error) {
 	msg, err := q.queue.ReceiveAndWait(ctx, 1*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dequeue message: %v", err)
