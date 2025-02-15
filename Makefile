@@ -12,7 +12,7 @@ build:
 # Run the server executable.
 run: build
 	@echo "Running the server..."
-	./bin/sb-test
+	./bin/sb-test -c config.yaml
 
 # Run all unit tests.
 test:
