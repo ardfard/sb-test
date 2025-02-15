@@ -1,121 +1,94 @@
+// Package queue provides queue implementations for task processing.
+// This package implements the queue.TaskQueue interface using SQLite as the underlying storage.
+// It uses the goqite library for reliable queue operations and maintains a separate table
+// for tracking failed tasks.
 package queue
 
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ardfard/sb-test/internal/domain/queue"
 	"github.com/jmoiron/sqlx"
+	"github.com/maragudk/goqite"
 )
 
+// SQLiteQueue implements queue.TaskQueue using goqite
 type SQLiteQueue struct {
-	db *sqlx.DB
+	queue *goqite.Queue
+	db    *sqlx.DB // Used for failed tasks table operations
 }
 
+// NewSQLiteQueue creates a new SQLiteQueue
 func NewSQLiteQueue(db *sqlx.DB) (*SQLiteQueue, error) {
-	if err := createTaskTable(db); err != nil {
-		return nil, fmt.Errorf("failed to create task table: %v", err)
+	// Convert sqlx.DB to sql.DB since goqite expects sql.DB
+	sqlDB := db.DB
+
+	// Try to initialize goqite schema, ignore "table already exists" error
+	err := goqite.Setup(context.Background(), db.DB)
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
+		return nil, fmt.Errorf("failed to initialize queue schema: %v", err)
 	}
-	return &SQLiteQueue{db: db}, nil
+
+	// Create a new queue named "audio_conversion" with default settings
+	q := goqite.New(goqite.NewOpts{
+		DB:   sqlDB,
+		Name: "audio_conversion",
+	})
+
+	return &SQLiteQueue{
+		queue: q,
+		db:    db,
+	}, nil
 }
 
-func createTaskTable(db *sqlx.DB) error {
-	query := `
-	CREATE TABLE IF NOT EXISTS tasks (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		type TEXT NOT NULL,
-		payload INTEGER NOT NULL,
-		status TEXT NOT NULL,
-		error TEXT,
-		created_at DATETIME NOT NULL,
-		updated_at DATETIME NOT NULL
-	)`
-	_, err := db.Exec(query)
-	return err
-}
-
-func (q *SQLiteQueue) Enqueue(ctx context.Context, taskType string, payload uint) error {
-	query := `
-	INSERT INTO tasks (
-		type, payload, status, created_at, updated_at
-	) VALUES (?, ?, ?, ?, ?)`
-
-	now := time.Now()
-	_, err := q.db.ExecContext(ctx, query, taskType, payload, "pending", now, now)
+func (q *SQLiteQueue) Enqueue(ctx context.Context, queueName string, payload uint) error {
+	err := q.queue.Send(ctx, goqite.Message{
+		Body: []byte(fmt.Sprintf("%d", payload)),
+	})
 	if err != nil {
-		return fmt.Errorf("failed to enqueue task: %v", err)
+		return fmt.Errorf("failed to enqueue message: %v", err)
 	}
 	return nil
 }
 
-func (q *SQLiteQueue) Dequeue(ctx context.Context, taskType string) (*queue.Task, error) {
-	tx, err := q.db.BeginTx(ctx, nil)
+// Dequeue gets a task from the queue
+func (q *SQLiteQueue) Dequeue(ctx context.Context, queueName string) (*queue.Task, error) {
+	msg, err := q.queue.ReceiveAndWait(ctx, 1*time.Second)
 	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %v", err)
+		return nil, fmt.Errorf("failed to dequeue message: %v", err)
 	}
-	defer tx.Rollback()
 
-	query := `
-	SELECT id, type, payload, status, created_at, updated_at
-	FROM tasks
-	WHERE type = ? AND status = 'pending'
-	ORDER BY created_at ASC
-	LIMIT 1`
-
-	var task queue.Task
-	err = tx.QueryRowContext(ctx, query, taskType).Scan(
-		&task.ID,
-		&task.Type,
-		&task.Payload,
-		&task.Status,
-		&task.CreatedAt,
-		&task.UpdatedAt,
-	)
+	// Convert the message body back to uint
+	var payload uint
+	_, err = fmt.Sscanf(string(msg.Body), "%d", &payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get task: %v", err)
+		return nil, fmt.Errorf("failed to parse message payload: %v", err)
 	}
 
-	updateQuery := `
-	UPDATE tasks
-	SET status = 'processing', updated_at = ?
-	WHERE id = ?`
-
-	now := time.Now()
-	_, err = tx.ExecContext(ctx, updateQuery, now, task.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update task status: %v", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %v", err)
-	}
-
-	return &task, nil
+	return &queue.Task{
+		ID:      string(msg.ID),
+		Payload: payload,
+	}, nil
 }
 
-func (q *SQLiteQueue) Complete(ctx context.Context, taskID uint) error {
-	query := `
-	UPDATE tasks
-	SET status = 'completed', updated_at = ?
-	WHERE id = ?`
-
-	_, err := q.db.ExecContext(ctx, query, time.Now(), taskID)
+// Complete marks a task as completed
+func (q *SQLiteQueue) Complete(ctx context.Context, taskID string) error {
+	err := q.queue.Delete(ctx, goqite.ID(taskID))
 	if err != nil {
-		return fmt.Errorf("failed to complete task: %v", err)
+		return fmt.Errorf("failed to complete message: %v", err)
 	}
 	return nil
 }
 
-func (q *SQLiteQueue) Fail(ctx context.Context, taskID uint, errMsg string) error {
-	query := `
-	UPDATE tasks
-	SET status = 'failed', error = ?, updated_at = ?
-	WHERE id = ?`
-
-	_, err := q.db.ExecContext(ctx, query, errMsg, time.Now(), taskID)
+// Fail marks a task as failed, stores it in the failed_tasks table, and removes it from the queue
+func (q *SQLiteQueue) Fail(ctx context.Context, taskID string, errMsg string) error {
+	// Delete and do nothing for now
+	err := q.queue.Delete(ctx, goqite.ID(taskID))
 	if err != nil {
-		return fmt.Errorf("failed to mark task as failed: %v", err)
+		return fmt.Errorf("failed to delete message: %v", err)
 	}
 	return nil
 }

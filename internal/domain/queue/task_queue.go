@@ -7,7 +7,7 @@ import (
 
 // Task represents a unit of work to be processed
 type Task struct {
-	ID        uint      // Unique identifier for the task
+	ID        string    // Unique identifier for the task
 	Type      string    // Type of task (e.g., "audio_conversion")
 	Payload   uint      // Task-specific data (in this case, audio ID)
 	Status    string    // Current status of the task
@@ -24,8 +24,8 @@ type TaskQueue interface {
 	Dequeue(ctx context.Context, taskType string) (*Task, error)
 
 	// Complete marks a task as completed
-	Complete(ctx context.Context, taskID uint) error
+	Complete(ctx context.Context, taskID string) error
 
 	// Fail marks a task as failed with an error message
-	Fail(ctx context.Context, taskID uint, errMsg string) error
+	Fail(ctx context.Context, taskID string, errMsg string) error
 }
