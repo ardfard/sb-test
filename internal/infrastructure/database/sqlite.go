@@ -1,11 +1,15 @@
 package database
 
 import (
+	"embed"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+//go:embed schema.sql
+var schemaFS embed.FS
 
 // InitDB initializes and returns a new SQLite database connection
 func InitDB(dbPath string) (*sqlx.DB, error) {
@@ -21,40 +25,11 @@ func InitDB(dbPath string) (*sqlx.DB, error) {
 
 // createTable creates the audios table if it doesn't exist.
 func createTable(db *sqlx.DB) error {
-	query := `
-	CREATE TABLE IF NOT EXISTS audios (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		original_name TEXT NOT NULL,
-		current_format TEXT NOT NULL,
-		storage_path TEXT,
-		status TEXT NOT NULL,
-		created_at DATETIME NOT NULL,
-		updated_at DATETIME NOT NULL,
-		error TEXT,
-		user_id INTEGER NOT NULL,
-		phrase_id INTEGER NOT NULL
-	);`
+	schemaSQL, err := schemaFS.ReadFile("schema.sql")
+	if err != nil {
+		return fmt.Errorf("failed to read schema file: %v", err)
+	}
 
-	query += `
-	CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL,
-		created_at DATETIME NOT NULL,
-		updated_at DATETIME NOT NULL
-	);`
-
-	query += `
-	CREATE TABLE IF NOT EXISTS phrases (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		phrase TEXT NOT NULL,
-		created_at DATETIME NOT NULL,
-		updated_at DATETIME NOT NULL
-	);`
-
-	// Create a unique constraint on user_id and phrase_id
-	query += `
-	CREATE UNIQUE INDEX IF NOT EXISTS idx_user_phrase ON audios (user_id, phrase_id);`
-
-	_, err := db.Exec(query)
+	_, err = db.Exec(string(schemaSQL))
 	return err
 }
