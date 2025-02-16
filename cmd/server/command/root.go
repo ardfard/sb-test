@@ -10,7 +10,7 @@ import (
 	"github.com/ardfard/sb-test/internal/infrastructure/converter"
 	"github.com/ardfard/sb-test/internal/infrastructure/database"
 	"github.com/ardfard/sb-test/internal/infrastructure/queue"
-	"github.com/ardfard/sb-test/internal/infrastructure/repository"
+	"github.com/ardfard/sb-test/internal/infrastructure/repository/sqlite"
 	"github.com/ardfard/sb-test/internal/infrastructure/storage"
 	"github.com/ardfard/sb-test/internal/usecase"
 	"github.com/ardfard/sb-test/internal/worker"
@@ -55,7 +55,7 @@ func run(cmd *cobra.Command, args []string) error {
 	defer db.Close()
 
 	// Initialize SQLite repository using configuration
-	repo, err := repository.NewSQLiteAudioRepository(db)
+	repo, err := sqlite.NewAudioRepository(db)
 	if err != nil {
 		return fmt.Errorf("failed to create repository: %v", err)
 	}

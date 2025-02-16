@@ -7,6 +7,16 @@ packages:
           dir: internal/infrastructure/repository/mocks
           outpkg: mocks
           filename: mock_audio_repository.go
+      PhraseRepository:
+        config:
+          dir: internal/infrastructure/repository/mocks
+          outpkg: mocks
+          filename: mock_phrase_repository.go
+      UserRepository:
+        config:
+          dir: internal/infrastructure/repository/mocks
+          outpkg: mocks
+          filename: mock_user_repository.go
   github.com/ardfard/sb-test/internal/domain/storage:
     interfaces:
       Storage:
