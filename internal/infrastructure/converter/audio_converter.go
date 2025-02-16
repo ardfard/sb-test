@@ -16,10 +16,6 @@ func NewAudioConverter() *AudioConverter {
 	return &AudioConverter{}
 }
 
-func (ac *AudioConverter) ConvertToWAV(ctx context.Context, inputPath, outputPath string) error {
-	return ac.Convert(ctx, inputPath, outputPath, "wav")
-}
-
 func (ac *AudioConverter) Convert(ctx context.Context, inputPath, outputPath, outputFormat string) error {
 	stream := ffmpeg.Input(inputPath)
 
