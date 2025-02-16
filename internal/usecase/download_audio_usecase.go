@@ -11,24 +11,45 @@ import (
 )
 
 type DownloadAudioUseCase struct {
-	repo      repository.AudioRepository
-	storage   storage.Storage
-	converter converter.AudioConverter
+	repo             repository.AudioRepository
+	storage          storage.Storage
+	converter        converter.AudioConverter
+	userRepository   repository.UserRepository
+	phraseRepository repository.PhraseRepository
 }
 
 func NewDownloadAudioUseCase(
 	repo repository.AudioRepository,
 	storage storage.Storage,
 	converter converter.AudioConverter,
+	userRepository repository.UserRepository,
+	phraseRepository repository.PhraseRepository,
 ) *DownloadAudioUseCase {
 	return &DownloadAudioUseCase{
-		repo:      repo,
-		storage:   storage,
-		converter: converter,
+		repo:             repo,
+		storage:          storage,
+		converter:        converter,
+		userRepository:   userRepository,
+		phraseRepository: phraseRepository,
 	}
 }
 
 func (uc *DownloadAudioUseCase) Download(ctx context.Context, userID uint, phraseID uint, outputFormat string) (io.ReadCloser, error) {
+	// check user and phrase exist
+	user, err := uc.userRepository.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %v", err)
+	}
+
+	phrase, err := uc.phraseRepository.GetByID(ctx, phraseID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get phrase: %v", err)
+	}
+
+	if user == nil || phrase == nil {
+		return nil, fmt.Errorf("user or phrase not found")
+	}
+
 	audio, err := uc.repo.GetByUserIDAndPhraseID(ctx, userID, phraseID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get audio: %v", err)

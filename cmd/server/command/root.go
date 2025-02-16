@@ -59,6 +59,14 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create repository: %v", err)
 	}
+	userRepo, err := sqlite.NewUserRepository(db)
+	if err != nil {
+		return fmt.Errorf("failed to create user repository: %v", err)
+	}
+	phraseRepo, err := sqlite.NewPhraseRepository(db)
+	if err != nil {
+		return fmt.Errorf("failed to create phrase repository: %v", err)
+	}
 
 	// Initialize storage using configuration
 	storageInstance, err := storage.NewStorage(&cfg.Storage)
@@ -75,9 +83,9 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	// Initialize use cases
-	uploadAudioUseCase := usecase.NewUploadAudioUseCase(repo, storageInstance, queueInstance)
+	uploadAudioUseCase := usecase.NewUploadAudioUseCase(repo, storageInstance, queueInstance, userRepo, phraseRepo)
 	convertAudioUseCase := usecase.NewConvertAudioUseCase(repo, storageInstance, converterInstance)
-	downloadAudioUseCase := usecase.NewDownloadAudioUseCase(repo, storageInstance, converterInstance)
+	downloadAudioUseCase := usecase.NewDownloadAudioUseCase(repo, storageInstance, converterInstance, userRepo, phraseRepo)
 
 	// Initialize handler.
 	audioHandler := handler.NewAudioHandler(uploadAudioUseCase, downloadAudioUseCase)

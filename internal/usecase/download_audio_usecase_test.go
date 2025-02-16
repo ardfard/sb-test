@@ -25,7 +25,7 @@ func TestDownloadAudioUseCase_Download(t *testing.T) {
 		userID        uint
 		phraseID      uint
 		format        string
-		setupMocks    func(*repoMocks.MockAudioRepository, *storageMocks.MockStorage)
+		setupMocks    func(*repoMocks.MockAudioRepository, *storageMocks.MockStorage, *repoMocks.MockUserRepository, *repoMocks.MockPhraseRepository)
 		expectedError bool
 		checkResult   func(*testing.T, io.ReadCloser, error)
 	}{
@@ -34,7 +34,7 @@ func TestDownloadAudioUseCase_Download(t *testing.T) {
 			userID:   1,
 			phraseID: 1,
 			format:   "m4a",
-			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage) {
+			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, userRepo *repoMocks.MockUserRepository, phraseRepo *repoMocks.MockPhraseRepository) {
 				audio := &entity.Audio{
 					ID:            1,
 					Status:        entity.AudioStatusCompleted,
@@ -46,6 +46,8 @@ func TestDownloadAudioUseCase_Download(t *testing.T) {
 					t.Fatal(err)
 				}
 
+				userRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.User{ID: 1}, nil)
+				phraseRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.Phrase{ID: 1}, nil)
 				repo.On("GetByUserIDAndPhraseID", mock.Anything, uint(1), uint(1)).Return(audio, nil)
 				storage.On("Download", mock.Anything, fmt.Sprintf("%s/converted/1.wav", basePath)).
 					Return(inputReader, nil)
@@ -64,7 +66,7 @@ func TestDownloadAudioUseCase_Download(t *testing.T) {
 			userID:   1,
 			phraseID: 1,
 			format:   "wav",
-			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage) {
+			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, userRepo *repoMocks.MockUserRepository, phraseRepo *repoMocks.MockPhraseRepository) {
 				audio := &entity.Audio{
 					ID:            1,
 					Status:        entity.AudioStatusPending,
@@ -76,6 +78,8 @@ func TestDownloadAudioUseCase_Download(t *testing.T) {
 					t.Fatal(err)
 				}
 
+				userRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.User{ID: 1}, nil)
+				phraseRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.Phrase{ID: 1}, nil)
 				repo.On("GetByUserIDAndPhraseID", mock.Anything, uint(1), uint(1)).Return(audio, nil)
 				storage.On("Download", mock.Anything, fmt.Sprintf("%s/original/1.wav", basePath)).
 					Return(inputReader, nil)
@@ -95,7 +99,7 @@ func TestDownloadAudioUseCase_Download(t *testing.T) {
 			userID:   1,
 			phraseID: 1,
 			format:   "m4a",
-			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage) {
+			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, userRepo *repoMocks.MockUserRepository, phraseRepo *repoMocks.MockPhraseRepository) {
 				audio := &entity.Audio{
 					ID:            1,
 					Status:        entity.AudioStatusPending,
@@ -107,6 +111,9 @@ func TestDownloadAudioUseCase_Download(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+
+				userRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.User{ID: 1}, nil)
+				phraseRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.Phrase{ID: 1}, nil)
 				repo.On("GetByUserIDAndPhraseID", mock.Anything, uint(1), uint(1)).Return(audio, nil)
 				storage.On("Download", mock.Anything, fmt.Sprintf("%s/original/1.wav", basePath)).
 					Return(inputReader, nil)
@@ -126,13 +133,42 @@ func TestDownloadAudioUseCase_Download(t *testing.T) {
 			userID:   999,
 			phraseID: 1,
 			format:   "wav",
-			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage) {
+			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, userRepo *repoMocks.MockUserRepository, phraseRepo *repoMocks.MockPhraseRepository) {
+				userRepo.On("GetByID", mock.Anything, uint(999)).Return(&entity.User{ID: 999}, nil)
+				phraseRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.Phrase{ID: 1}, nil)
 				repo.On("GetByUserIDAndPhraseID", mock.Anything, uint(999), uint(1)).Return(nil, assert.AnError)
 			},
 			expectedError: true,
 			checkResult: func(t *testing.T, reader io.ReadCloser, err error) {
 				assert.Error(t, err)
 				assert.Nil(t, reader)
+			},
+		},
+		{
+			name:     "user not found",
+			userID:   999,
+			phraseID: 1,
+			format:   "wav",
+			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, userRepo *repoMocks.MockUserRepository, phraseRepo *repoMocks.MockPhraseRepository) {
+				userRepo.On("GetByID", mock.Anything, uint(999)).Return(nil, assert.AnError)
+			},
+			expectedError: true,
+			checkResult: func(t *testing.T, reader io.ReadCloser, err error) {
+				assert.Error(t, err)
+			},
+		},
+		{
+			name:     "phrase not found",
+			userID:   1,
+			phraseID: 999,
+			format:   "wav",
+			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, userRepo *repoMocks.MockUserRepository, phraseRepo *repoMocks.MockPhraseRepository) {
+				userRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.User{ID: 1}, nil)
+				phraseRepo.On("GetByID", mock.Anything, uint(999)).Return(nil, assert.AnError)
+			},
+			expectedError: true,
+			checkResult: func(t *testing.T, reader io.ReadCloser, err error) {
+				assert.Error(t, err)
 			},
 		},
 	}
@@ -142,10 +178,12 @@ func TestDownloadAudioUseCase_Download(t *testing.T) {
 			repo := &repoMocks.MockAudioRepository{}
 			storage := &storageMocks.MockStorage{}
 			audioConverter := converter.NewAudioConverter()
+			userRepo := &repoMocks.MockUserRepository{}
+			phraseRepo := &repoMocks.MockPhraseRepository{}
 
-			tt.setupMocks(repo, storage)
+			tt.setupMocks(repo, storage, userRepo, phraseRepo)
 
-			uc := NewDownloadAudioUseCase(repo, storage, audioConverter)
+			uc := NewDownloadAudioUseCase(repo, storage, audioConverter, userRepo, phraseRepo)
 			reader, err := uc.Download(context.Background(), tt.userID, tt.phraseID, tt.format)
 
 			tt.checkResult(t, reader, err)

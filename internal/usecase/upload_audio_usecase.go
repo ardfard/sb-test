@@ -18,20 +18,26 @@ const (
 )
 
 type UploadAudioUseCase struct {
-	repo    repository.AudioRepository
-	storage storage.Storage
-	queue   queue.TaskQueue
+	repo             repository.AudioRepository
+	storage          storage.Storage
+	userRepository   repository.UserRepository
+	phraseRepository repository.PhraseRepository
+	queue            queue.TaskQueue
 }
 
 func NewUploadAudioUseCase(
 	repo repository.AudioRepository,
 	storage storage.Storage,
 	queue queue.TaskQueue,
+	userRepository repository.UserRepository,
+	phraseRepository repository.PhraseRepository,
 ) *UploadAudioUseCase {
 	return &UploadAudioUseCase{
-		repo:    repo,
-		storage: storage,
-		queue:   queue,
+		repo:             repo,
+		storage:          storage,
+		userRepository:   userRepository,
+		phraseRepository: phraseRepository,
+		queue:            queue,
 	}
 }
 
@@ -46,6 +52,21 @@ func (uc *UploadAudioUseCase) Upload(ctx context.Context, filename string, conte
 		UpdatedAt:     time.Now(),
 		UserID:        userID,
 		PhraseID:      phraseID,
+	}
+
+	// check user and phrase exist
+	user, err := uc.userRepository.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %v", err)
+	}
+
+	phrase, err := uc.phraseRepository.GetByID(ctx, phraseID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get phrase: %v", err)
+	}
+
+	if user == nil || phrase == nil {
+		return nil, fmt.Errorf("user or phrase not found")
 	}
 
 	if err := uc.repo.Store(ctx, audio); err != nil {
