@@ -2,8 +2,10 @@
 
 # Smoke Test Script for Audio Upload and Download API
 # This script tests:
-# 1. /audio/user/{user_id}/phrase/{phrase_id} (Upload)
-# 2. /audio/user/{user_id}/phrase/{phrase_id}/{format} (Download)
+# 1. /users (Create User)
+# 2. /users/{user_id}/phrases (Create Phrase)
+# 3. /audio/user/{user_id}/phrase/{phrase_id} (Upload)
+# 4. /audio/user/{user_id}/phrase/{phrase_id}/{format} (Download)
 #
 # Prerequisites:
 # - Ensure your API server is running on http://localhost:8080
@@ -61,40 +63,49 @@ fi
 echo "Waiting for conversion to complete..."
 sleep 2
 
-# Test Download
-echo "Testing Download Endpoint..."
-DOWNLOAD_ENDPOINT="${API_HOST}/audio/user/${USER_ID}/phrase/${PHRASE_ID}/m4a"
-DOWNLOADED_FILE="${DOWNLOAD_DIR}/audio_${USER_ID}_${PHRASE_ID}.m4a"
+# Test Download function
+test_download() {
+    local format=$1
+    local format_upper=${format^^}
+    
+    echo "Testing Download Endpoint for ${format}..."
+    DOWNLOAD_ENDPOINT="${API_HOST}/audio/user/${USER_ID}/phrase/${PHRASE_ID}/${format}"
+    DOWNLOADED_FILE="${DOWNLOAD_DIR}/audio_${USER_ID}_${PHRASE_ID}.${format}"
 
-echo "Downloading converted audio from $DOWNLOAD_ENDPOINT..."
+    echo "Downloading converted audio from $DOWNLOAD_ENDPOINT..."
 
-download_response=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" \
-    -o "$DOWNLOADED_FILE" \
-    "${DOWNLOAD_ENDPOINT}")
+    download_response=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" \
+        -o "$DOWNLOADED_FILE" \
+        "${DOWNLOAD_ENDPOINT}")
 
-download_status=$(echo "$download_response" | sed -n 's/HTTP_STATUS://p' | tr -d ' ')
+    download_status=$(echo "$download_response" | sed -n 's/HTTP_STATUS://p' | tr -d ' ')
 
-echo "Download Response HTTP Status: $download_status"
+    echo "Download Response HTTP Status: $download_status"
 
-if [ "$download_status" -ne 200 ]; then
-    echo "Download test failed with status code $download_status"
-    exit 1
-fi
+    if [ "$download_status" -ne 200 ]; then
+        echo "Download test failed with status code $download_status"
+        exit 1
+    fi
 
-if [ ! -f "$DOWNLOADED_FILE" ]; then
-    echo "Downloaded file not found"
-    exit 1
-fi
+    if [ ! -f "$DOWNLOADED_FILE" ]; then
+        echo "Downloaded file not found"
+        exit 1
+    fi
 
-# Check if downloaded file is a valid m4a file
-file_type=$(file -b "$DOWNLOADED_FILE")
-if [[ ! "$file_type" =~ "M4A" ]]; then
-    echo "Downloaded file is not a valid M4A file. File type: $file_type"
-    exit 1
-fi
+    # Check if downloaded file is valid
+    file_type=$(file -b "$DOWNLOADED_FILE")
+    if [[ ! "$file_type" =~ "$format_upper" ]]; then
+        echo "Downloaded file is not a valid ${format_upper} file. File type: $file_type"
+        exit 1
+    fi
 
-echo "Downloaded file saved to: $DOWNLOADED_FILE"
-echo "File type: $file_type"
-echo "File size: $(ls -lh "$DOWNLOADED_FILE" | awk '{print $5}')"
+    echo "Downloaded file saved to: $DOWNLOADED_FILE"
+    echo "File type: $file_type"
+    echo "File size: $(ls -lh "$DOWNLOADED_FILE" | awk '{print $5}')"
+}
+
+# Test both formats
+test_download "m4a"
+test_download "flac"
 
 echo "Smoke test succeeded!" 
