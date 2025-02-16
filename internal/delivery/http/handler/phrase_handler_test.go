@@ -18,6 +18,7 @@ import (
 func TestPhraseHandler_Create(t *testing.T) {
 	tests := []struct {
 		name           string
+		method         string
 		userID         string
 		requestBody    map[string]interface{}
 		expectedStatus int
@@ -25,6 +26,7 @@ func TestPhraseHandler_Create(t *testing.T) {
 	}{
 		{
 			name:   "successful creation",
+			method: "POST",
 			userID: "1",
 			requestBody: map[string]interface{}{
 				"text": "Hello, World!",
@@ -37,10 +39,34 @@ func TestPhraseHandler_Create(t *testing.T) {
 		},
 		{
 			name:   "empty text",
+			method: "POST",
 			userID: "1",
 			requestBody: map[string]interface{}{
 				"text": "",
 			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:   "invalid user ID",
+			method: "POST",
+			userID: "invalid",
+			requestBody: map[string]interface{}{
+				"text": "Hello, World!",
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "method not allowed",
+			method:         "GET",
+			userID:         "1",
+			requestBody:    map[string]interface{}{},
+			expectedStatus: http.StatusMethodNotAllowed,
+		},
+		{
+			name:           "invalid request body",
+			method:         "POST",
+			userID:         "1",
+			requestBody:    nil,
 			expectedStatus: http.StatusBadRequest,
 		},
 	}
@@ -51,7 +77,7 @@ func TestPhraseHandler_Create(t *testing.T) {
 			mockPhraseRepo := repoMocks.NewMockPhraseRepository(t)
 
 			// Use mock.MatchedBy for more flexible matching
-			if tt.requestBody["text"] != "" {
+			if tt.requestBody != nil && tt.method == "POST" && tt.requestBody["text"] != "" && tt.userID == "1" {
 				mockPhraseRepo.On("Create", mock.Anything, mock.MatchedBy(func(phrase *entity.Phrase) bool {
 					return phrase.UserID == 1 && phrase.Phrase == "Hello, World!"
 				})).Return(&entity.Phrase{
@@ -68,8 +94,13 @@ func TestPhraseHandler_Create(t *testing.T) {
 			handler := handler.NewPhraseHandler(createPhraseUseCase)
 
 			// Create request
-			body, _ := json.Marshal(tt.requestBody)
-			req := httptest.NewRequest("POST", "/users/"+tt.userID+"/phrases", bytes.NewBuffer(body))
+			var req *http.Request
+			if tt.requestBody != nil {
+				body, _ := json.Marshal(tt.requestBody)
+				req = httptest.NewRequest(tt.method, "/users/"+tt.userID+"/phrases", bytes.NewBuffer(body))
+			} else {
+				req = httptest.NewRequest(tt.method, "/users/"+tt.userID+"/phrases", bytes.NewBuffer([]byte("invalid json")))
+			}
 			req.Header.Set("Content-Type", "application/json")
 
 			// Set up router with URL parameters

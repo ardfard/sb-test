@@ -17,12 +17,14 @@ import (
 func TestUserHandler_Create(t *testing.T) {
 	tests := []struct {
 		name           string
+		method         string
 		requestBody    map[string]interface{}
 		expectedStatus int
 		expectedBody   map[string]interface{}
 	}{
 		{
-			name: "successful creation",
+			name:   "successful creation",
+			method: "POST",
 			requestBody: map[string]interface{}{
 				"name": "John Doe",
 			},
@@ -33,9 +35,30 @@ func TestUserHandler_Create(t *testing.T) {
 			},
 		},
 		{
-			name: "empty name",
+			name:   "empty name",
+			method: "POST",
 			requestBody: map[string]interface{}{
 				"name": "",
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "method not allowed",
+			method:         "GET",
+			requestBody:    map[string]interface{}{},
+			expectedStatus: http.StatusMethodNotAllowed,
+		},
+		{
+			name:           "invalid request body",
+			method:         "POST",
+			requestBody:    nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:   "malformed json",
+			method: "POST",
+			requestBody: map[string]interface{}{
+				"invalid_field": "some value",
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -46,8 +69,8 @@ func TestUserHandler_Create(t *testing.T) {
 			// Initialize mock
 			mockUserRepo := repoMocks.NewMockUserRepository(t)
 
-			// Set up mock expectations
-			if tt.requestBody["name"] != "" {
+			// Set up mock expectations only for successful case
+			if tt.requestBody != nil && tt.method == "POST" && tt.requestBody["name"] == "John Doe" {
 				mockUserRepo.On("Create", mock.Anything, mock.MatchedBy(func(user *entity.User) bool {
 					return user.Name == "John Doe"
 				})).Return(&entity.User{
@@ -63,8 +86,13 @@ func TestUserHandler_Create(t *testing.T) {
 			handler := handler.NewUserHandler(createUserUseCase)
 
 			// Create request
-			body, _ := json.Marshal(tt.requestBody)
-			req := httptest.NewRequest("POST", "/users", bytes.NewBuffer(body))
+			var req *http.Request
+			if tt.requestBody != nil {
+				body, _ := json.Marshal(tt.requestBody)
+				req = httptest.NewRequest(tt.method, "/users", bytes.NewBuffer(body))
+			} else {
+				req = httptest.NewRequest(tt.method, "/users", bytes.NewBuffer([]byte("invalid json")))
+			}
 			req.Header.Set("Content-Type", "application/json")
 
 			// Record response
