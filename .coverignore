@@ -1,1 +1,5 @@
 cmd/
+internal/infrastructure/queue/mocks/
+internal/infrastructure/repository/mocks/
+internal/infrastructure/storage/mocks/
+internal/infrastructure/converter/mocks/
