@@ -31,7 +31,7 @@ func NewSQLiteAudioRepository(db *sqlx.DB) (*SQLiteAudioRepository, error) {
 func createTable(db *sqlx.DB) error {
 	query := `
 	CREATE TABLE IF NOT EXISTS audios (
-		id INTEGER PRIMARY KEY,
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		original_name TEXT NOT NULL,
 		current_format TEXT NOT NULL,
 		storage_path TEXT,
@@ -41,11 +41,11 @@ func createTable(db *sqlx.DB) error {
 		error TEXT,
 		user_id INTEGER NOT NULL,
 		phrase_id INTEGER NOT NULL
-	)`
+	);`
 
 	// Create a unique constraint on user_id and phrase_id
 	query += `
-	CREATE UNIQUE INDEX IF NOT EXISTS idx_user_phrase ON audios (user_id, phrase_id)`
+	CREATE UNIQUE INDEX IF NOT EXISTS idx_user_phrase ON audios (user_id, phrase_id);`
 
 	_, err := db.Exec(query)
 	return err
@@ -58,7 +58,7 @@ func (r *SQLiteAudioRepository) Store(ctx context.Context, audio *entity.Audio) 
 		id, original_name, current_format, storage_path, 
 		status, created_at, updated_at, error,
 		user_id, phrase_id
-	) VALUES (:id, :original_name, :original_format, :storage_path, 
+	) VALUES (:id, :original_name, :current_format, :storage_path, 
 		:status, :created_at, :updated_at, :error,
 		:user_id, :phrase_id)`
 	_, err := r.db.NamedExecContext(ctx, query, map[string]interface{}{
