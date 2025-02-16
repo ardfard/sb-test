@@ -1,0 +1,7 @@
+ignore:
+  - cmd
+  - internal/infrastructure/converter/mocks
+  - internal/infrastructure/repository/mocks
+  - internal/infrastructure/queue/mocks
+  - internal/infrastructure/storage/mocks
+
