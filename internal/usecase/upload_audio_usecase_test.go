@@ -27,7 +27,7 @@ func TestUploadAudioUseCase_Upload(t *testing.T) {
 			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, queue *queueMocks.MockTaskQueue, userRepo *repoMocks.MockUserRepository, phraseRepo *repoMocks.MockPhraseRepository) {
 				repo.On("Store", mock.Anything, mock.MatchedBy(func(audio *entity.Audio) bool {
 					return audio.OriginalName == "test.mp3" && audio.CurrentFormat == ".mp3"
-				})).Return(nil)
+				})).Return(&entity.Audio{ID: 1, OriginalName: "test.mp3", CurrentFormat: ".mp3"}, nil)
 
 				storage.On("Upload", mock.Anything, mock.MatchedBy(func(path string) bool {
 					return strings.HasPrefix(path, fmt.Sprintf("%s/original/", basePath)) && strings.HasSuffix(path, ".mp3")
@@ -44,7 +44,7 @@ func TestUploadAudioUseCase_Upload(t *testing.T) {
 			name:     "repository error",
 			filename: "test.mp3",
 			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, queue *queueMocks.MockTaskQueue, userRepo *repoMocks.MockUserRepository, phraseRepo *repoMocks.MockPhraseRepository) {
-				repo.On("Store", mock.Anything, mock.Anything).Return(assert.AnError)
+				repo.On("Store", mock.Anything, mock.Anything).Return(nil, assert.AnError)
 				userRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.User{ID: 1}, nil)
 				phraseRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.Phrase{ID: 1}, nil)
 			},
@@ -54,7 +54,7 @@ func TestUploadAudioUseCase_Upload(t *testing.T) {
 			name:     "storage error",
 			filename: "test.mp3",
 			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, queue *queueMocks.MockTaskQueue, userRepo *repoMocks.MockUserRepository, phraseRepo *repoMocks.MockPhraseRepository) {
-				repo.On("Store", mock.Anything, mock.Anything).Return(nil)
+				repo.On("Store", mock.Anything, mock.Anything).Return(&entity.Audio{ID: 1, OriginalName: "test.mp3", CurrentFormat: ".mp3"}, nil)
 				storage.On("Upload", mock.Anything, mock.Anything, mock.Anything).Return(assert.AnError)
 				userRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.User{ID: 1}, nil)
 				phraseRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.Phrase{ID: 1}, nil)
@@ -65,7 +65,7 @@ func TestUploadAudioUseCase_Upload(t *testing.T) {
 			name:     "queue error",
 			filename: "test.mp3",
 			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, queue *queueMocks.MockTaskQueue, userRepo *repoMocks.MockUserRepository, phraseRepo *repoMocks.MockPhraseRepository) {
-				repo.On("Store", mock.Anything, mock.Anything).Return(nil)
+				repo.On("Store", mock.Anything, mock.Anything).Return(&entity.Audio{ID: 1, OriginalName: "test.mp3", CurrentFormat: ".mp3"}, nil)
 				storage.On("Upload", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				queue.On("Enqueue", mock.Anything, mock.Anything).Return(assert.AnError)
 				userRepo.On("GetByID", mock.Anything, uint(1)).Return(&entity.User{ID: 1}, nil)
