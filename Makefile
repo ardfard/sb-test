@@ -7,7 +7,7 @@ all: build
 build:
 	@echo "Building the project..."
 	mkdir -p bin
-	go build -o bin/sb-test ./cmd/server
+	CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-linkmode external -extldflags "-static"' -o bin/sb-test ./cmd/server
 
 # Run the server executable.
 run: build
