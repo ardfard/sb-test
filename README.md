@@ -1,6 +1,7 @@
 # SB-Test
 
-[![Go](https://github.com/ardfard/sb-test/actions/workflows/go.yml/badge.svg)](https://github.com/ardfard/sb-test/actions/workflows/go.yml)
+[![Unit Test](https://github.com/ardfard/sb-test/actions/workflows/go.yml/badge.svg)](https://github.com/ardfard/sb-test/actions/workflows/go.yml)
+[![Smoke Test](https://github.com/ardfard/sb-test/actions/workflows/smoke-test.yml/badge.svg)](https://github.com/ardfard/sb-test/actions/workflows/smoke-test.yml)
 [![codecov](https://codecov.io/gh/ardfard/sb-test/graph/badge.svg)](https://codecov.io/gh/ardfard/sb-test)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ardfard/sb-test)](https://goreportcard.com/report/github.com/ardfard/sb-test)
 
