@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ardfard/sb-test/config"
@@ -114,14 +115,18 @@ func TestS3Storage(t *testing.T) {
 		t.Skip("MinIO is not available")
 	}
 
-	// Create test bucket
+	// Create test bucket (ignore already exists error)
 	sess := createMinIOSession(endpoint, accessKeyID, secretAccessKey, region, useSSL)
 	s3Client := s3.New(sess)
 
 	_, err := s3Client.CreateBucket(&s3.CreateBucketInput{
 		Bucket: aws.String(bucket),
 	})
-	require.NoError(t, err)
+	if err != nil {
+		if !strings.Contains(err.Error(), "BucketAlreadyOwnedByYou") {
+			require.NoError(t, err)
+		}
+	}
 
 	// Initialize S3Storage
 	s3Storage, err := NewS3Storage(region, bucket, accessKeyID, secretAccessKey, true)
