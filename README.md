@@ -25,7 +25,7 @@ This will:
 - Download the audio file in both m4a and flac formats
 - Run the service at http://localhost:8080
 
-[![asciicast](https://asciinema.org/a/xwODuASo4Jt1FvrqrCIjAzcgV.svg)](https://asciinema.org/a/xwODuASo4Jt1FvrqrCIjAzcgV)
+[![asciicast](https://asciinema.org/a/ei7JOoIGszahzomC5OxXlQIpB.svg)](https://asciinema.org/a/ei7JOoIGszahzomC5OxXlQIpB)
 
 ## Assumptions
 
