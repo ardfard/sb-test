@@ -124,7 +124,7 @@ func TestS3Storage(t *testing.T) {
 	require.NoError(t, err)
 
 	// Initialize S3Storage
-	s3Storage, err := NewS3Storage(region, bucket, accessKeyID, secretAccessKey)
+	s3Storage, err := NewS3Storage(region, bucket, accessKeyID, secretAccessKey, true)
 	require.NoError(t, err)
 
 	ctx := context.Background()

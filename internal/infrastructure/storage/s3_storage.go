@@ -22,13 +22,24 @@ type S3Storage struct {
 }
 
 // NewS3Storage creates a new S3Storage instance.
-func NewS3Storage(region, bucket, accessKeyID, secretAccessKey string) (*S3Storage, error) {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(region),
-		Credentials: credentials.NewStaticCredentials(
-			accessKeyID, secretAccessKey, "",
-		),
-	})
+func NewS3Storage(region, bucket, accessKeyID, secretAccessKey string, isTesting bool) (*S3Storage, error) {
+	var sess *session.Session
+	var err error
+	if isTesting {
+		sess, err = session.NewSession(&aws.Config{
+			Credentials:      credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""),
+			Endpoint:         aws.String("localhost:9000"), // Use MinIO endpoint if testing
+			Region:           aws.String("us-east-1"),
+			DisableSSL:       aws.Bool(true), // Disable SSL if using MinIO
+			S3ForcePathStyle: aws.Bool(true), // Force path style if using MinIO
+		})
+	} else {
+		sess, err = session.NewSession(&aws.Config{
+			Credentials: credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""),
+			Region:      aws.String(region),
+		})
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create S3 session: %v", err)
 	}

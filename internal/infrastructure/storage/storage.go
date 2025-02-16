@@ -20,6 +20,7 @@ func NewStorage(cfg *config.StorageConfig) (storageInstance storage.Storage, err
 			cfg.S3.Bucket,
 			cfg.S3.AccessKeyID,
 			cfg.S3.SecretAccessKey,
+			false,
 		)
 		if err != nil {
 			return nil, err
