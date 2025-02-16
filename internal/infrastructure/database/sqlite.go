@@ -18,6 +18,7 @@ func InitDB(dbPath string) (*sqlx.DB, error) {
 		return nil, fmt.Errorf("failed to open database: %v", err)
 	}
 	if err := createTable(db); err != nil {
+		db.Close() // Close the db connection if table creation fails
 		return nil, fmt.Errorf("failed to create table: %v", err)
 	}
 	return db, nil
@@ -25,11 +26,18 @@ func InitDB(dbPath string) (*sqlx.DB, error) {
 
 // createTable creates the audios table if it doesn't exist.
 func createTable(db *sqlx.DB) error {
+	if db == nil {
+		return fmt.Errorf("database connection is nil")
+	}
+
 	schemaSQL, err := schemaFS.ReadFile("schema.sql")
 	if err != nil {
 		return fmt.Errorf("failed to read schema file: %v", err)
 	}
 
 	_, err = db.Exec(string(schemaSQL))
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to execute schema: %v", err)
+	}
+	return nil
 }
