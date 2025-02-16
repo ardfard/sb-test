@@ -155,7 +155,8 @@ The project uses S3 or a local directory to store the audio files. Like a typica
 The current implementation is a simple one and no way near production ready. There are many ways to improve it. Here are some of the improvements that can be made:
 - Change the message queue to a more robust solution like Kafka or using something like [temporal](https://temporal.io/) for better reliability and visibility of the background processing
 - When converting the audio file, the service is doing IO operations to the local disk first for conversion using ffmpeg. It should be possible that we stream the audio file to the ffmpeg to the response and avoid the local disk IO. Or even better, we can use a cloud native solution like AWS Elastic Transcoder or GCP Transcoding API for the conversion and convert it from the object storage to object storage.
-- Put a modern proxy like [Envoy](https://www.envoyproxy.io/) in front of the service for load balancing, caching, monitoring and logging. We also can utilize the new features and protocol of HTTP/3 supported by the proxy for better latency and reliability. We can also enable compression for more efficient data transfer with the trade-off of increased CPU usage.
+- Put a modern proxy like [Envoy](https://www.envoyproxy.io/) in front of the service for load balancing, caching, monitoring and logging. We can also utilize the new features and protocol of HTTP/3 supported by the proxy for better latency and reliability. We can also enable compression for more efficient data transfer with the trade-off of increased CPU usage.
+- Use CDN for caching the audio file. We can preconvert the audio file to the most popular formats after the upload and cache them in the CDN.
 - Add authentication and authorization
 - For long term storage, use a more efficient lossless format like [Opus](https://opus-codec.org/) or [FLAC](https://xiph.org/flac/).
 
