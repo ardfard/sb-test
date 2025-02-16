@@ -11,6 +11,22 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     
+    services:
+      minio:
+        image: minio/minio:latest
+        ports:
+          - 9000:9000
+          - 9001:9001
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --entrypoint "minio server /data --console-address ':9001'"
+
     steps:
     - uses: actions/checkout@v3
 
@@ -23,6 +39,18 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y ffmpeg
+
+    - name: Install MinIO Client
+      run: |
+        curl -O https://dl.min.io/client/mc/release/linux-amd64/mc
+        chmod +x mc
+        sudo mv mc /usr/local/bin/
+        mc config host add myminio http://localhost:9000 minioadmin minioadmin
+
+    - name: Create MinIO bucket
+      run: |
+        mc mb myminio/testbucket
+        mc policy set public myminio/testbucket
 
     - name: Install dependencies
       run: |
