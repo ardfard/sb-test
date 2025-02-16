@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ardfard/sb-test/internal/pkg/logger"
 	"github.com/ardfard/sb-test/internal/usecase"
 	"github.com/gorilla/mux"
 )
@@ -27,12 +28,14 @@ func NewAudioHandler(uploadUseCase *usecase.UploadAudioUseCase, downloadUseCase 
 // UploadAudio handles the upload of an audio file.
 func (h *AudioHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		logger.Errorf("Method not allowed: %v", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	file, header, err := r.FormFile("audio_file")
 	if err != nil {
+		logger.Errorf("Failed to get file from request: %v", err)
 		http.Error(w, "Failed to get file from request", http.StatusBadRequest)
 		return
 	}
@@ -43,18 +46,21 @@ func (h *AudioHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 
 	userIDUint, err := strconv.ParseUint(userID, 10, 64)
 	if err != nil {
+		logger.Errorf("Invalid user ID: %v", err)
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
 
 	phraseIDUint, err := strconv.ParseUint(phraseID, 10, 64)
 	if err != nil {
+		logger.Errorf("Invalid phrase ID: %v", err)
 		http.Error(w, "Invalid phrase ID", http.StatusBadRequest)
 		return
 	}
 
 	audio, err := h.uploadUseCase.Upload(r.Context(), header.Filename, file, uint(userIDUint), uint(phraseIDUint))
 	if err != nil {
+		logger.Errorf("Failed to upload audio: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -65,6 +71,7 @@ func (h *AudioHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 		"id":     audio.ID,
 		"status": audio.Status,
 	}); err != nil {
+		logger.Errorf("Failed to encode response: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

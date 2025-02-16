@@ -25,31 +25,31 @@ func NewAudioRepository(db *sqlx.DB) (*AudioRepository, error) {
 }
 
 // Store stores an audio entity in the database.
-func (r *AudioRepository) Store(ctx context.Context, audio *entity.Audio) error {
+func (r *AudioRepository) Store(ctx context.Context, audio *entity.Audio) (*entity.Audio, error) {
 	query := `
 	INSERT INTO audios (
-		id, original_name, current_format, storage_path, 
+		original_name, current_format, storage_path, 
 		status, created_at, updated_at, error,
 		user_id, phrase_id
-	) VALUES (:id, :original_name, :current_format, :storage_path, 
-		:status, :created_at, :updated_at, :error,
-		:user_id, :phrase_id)`
-	_, err := r.db.NamedExecContext(ctx, query, map[string]interface{}{
-		"id":             audio.ID,
-		"original_name":  audio.OriginalName,
-		"current_format": audio.CurrentFormat,
-		"storage_path":   audio.StoragePath,
-		"status":         audio.Status,
-		"created_at":     audio.CreatedAt.Format(time.RFC3339),
-		"updated_at":     audio.UpdatedAt.Format(time.RFC3339),
-		"error":          audio.Error,
-		"user_id":        audio.UserID,
-		"phrase_id":      audio.PhraseID,
-	})
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+	RETURNING id, original_name, current_format, storage_path, status, 
+		created_at, updated_at, error, user_id, phrase_id`
+	var createdAudio entity.Audio
+	err := r.db.GetContext(ctx, &createdAudio, query,
+		audio.OriginalName,
+		audio.CurrentFormat,
+		audio.StoragePath,
+		audio.Status,
+		audio.CreatedAt.Format(time.RFC3339),
+		audio.UpdatedAt.Format(time.RFC3339),
+		audio.Error,
+		audio.UserID,
+		audio.PhraseID,
+	)
 	if err != nil {
-		return fmt.Errorf("failed to store audio: %v", err)
+		return nil, fmt.Errorf("failed to store audio: %v", err)
 	}
-	return nil
+	return &createdAudio, nil
 }
 
 // GetByID retrieves an audio entity from the database by its ID.

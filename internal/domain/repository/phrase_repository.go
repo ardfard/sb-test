@@ -7,6 +7,6 @@ import (
 )
 
 type PhraseRepository interface {
-	Create(ctx context.Context, phrase *entity.Phrase) error
+	Create(ctx context.Context, phrase *entity.Phrase) (*entity.Phrase, error)
 	GetByID(ctx context.Context, id uint) (*entity.Phrase, error)
 }

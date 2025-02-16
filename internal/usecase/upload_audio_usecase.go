@@ -69,7 +69,8 @@ func (uc *UploadAudioUseCase) Upload(ctx context.Context, filename string, conte
 		return nil, fmt.Errorf("user or phrase not found")
 	}
 
-	if err := uc.repo.Store(ctx, audio); err != nil {
+	audio, err = uc.repo.Store(ctx, audio)
+	if err != nil {
 		return nil, fmt.Errorf("failed to store audio metadata: %v", err)
 	}
 

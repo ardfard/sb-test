@@ -15,8 +15,6 @@
 
 API_HOST="http://localhost:8080"
 TEST_AUDIO_FILE="tests/fixtures/test.m4a"
-USER_ID="123"
-PHRASE_ID="456"
 DOWNLOAD_DIR="downloaded"
 
 # Create download directory if it doesn't exist
@@ -26,6 +24,16 @@ if [[ ! -f "$TEST_AUDIO_FILE" ]]; then
     echo "Test audio file '$TEST_AUDIO_FILE' not found. Please make sure it exists."
     exit 1
 fi
+
+# Create user
+USER_ID=$(curl -s -X POST -H "Content-Type: application/json" \
+    -d '{"name": "Ashen One"}' \
+    "${API_HOST}/users" | jq -r '.id')
+
+# Create phrase
+PHRASE_ID=$(curl -s -X POST -H "Content-Type: application/json" \
+    -d '{"text": "Only in truth, the Lords will abandon their thrones, and the Unkindled will rise"}' \
+    "${API_HOST}/users/${USER_ID}/phrases" | jq -r '.id')
 
 # Test Upload
 echo "Testing Upload Endpoint..."
@@ -48,16 +56,6 @@ if [ "$upload_status" -ne 200 ]; then
     echo "Upload test failed with status code $upload_status"
     exit 1
 fi
-
-# Extract audio_id from response
-AUDIO_ID=$(echo "$upload_body" | grep -o '"id":[0-9]*' | cut -d':' -f2)
-
-if [ -z "$AUDIO_ID" ]; then
-    echo "Failed to extract audio ID from response"
-    exit 1
-fi
-
-echo "Uploaded audio ID: $AUDIO_ID"
 
 # Wait for conversion (adjust time as needed)
 echo "Waiting for conversion to complete..."

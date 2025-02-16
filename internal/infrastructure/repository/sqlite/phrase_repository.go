@@ -16,17 +16,14 @@ func NewPhraseRepository(db *sqlx.DB) (*PhraseRepository, error) {
 	return &PhraseRepository{db: db}, nil
 }
 
-func (r *PhraseRepository) Create(ctx context.Context, phrase *entity.Phrase) error {
-	query := `INSERT INTO phrases (phrase, created_at, updated_at) VALUES (:phrase, :created_at, :updated_at)`
-	_, err := r.db.NamedExecContext(ctx, query, map[string]interface{}{
-		"phrase":     phrase.Phrase,
-		"created_at": phrase.CreatedAt,
-		"updated_at": phrase.UpdatedAt,
-	})
+func (r *PhraseRepository) Create(ctx context.Context, phrase *entity.Phrase) (*entity.Phrase, error) {
+	query := `INSERT INTO phrases (phrase, created_at, updated_at) VALUES ($1, $2, $3) RETURNING id, phrase, created_at, updated_at`
+	var createdPhrase entity.Phrase
+	err := r.db.GetContext(ctx, &createdPhrase, query, phrase.Phrase, phrase.CreatedAt, phrase.UpdatedAt)
 	if err != nil {
-		return fmt.Errorf("failed to create phrase: %w", err)
+		return nil, fmt.Errorf("failed to create phrase: %w", err)
 	}
-	return nil
+	return &createdPhrase, nil
 }
 
 func (r *PhraseRepository) GetByID(ctx context.Context, id uint) (*entity.Phrase, error) {

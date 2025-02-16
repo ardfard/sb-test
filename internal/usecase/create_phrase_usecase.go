@@ -7,14 +7,26 @@ import (
 	"github.com/ardfard/sb-test/internal/domain/repository"
 )
 
-type CreatePhraseUsecase struct {
+type CreatePhraseUseCase struct {
 	phraseRepository repository.PhraseRepository
 }
 
-func NewCreatePhraseUsecase(phraseRepository repository.PhraseRepository) *CreatePhraseUsecase {
-	return &CreatePhraseUsecase{phraseRepository: phraseRepository}
+func NewCreatePhraseUseCase(phraseRepository repository.PhraseRepository) *CreatePhraseUseCase {
+	return &CreatePhraseUseCase{
+		phraseRepository: phraseRepository,
+	}
 }
 
-func (u *CreatePhraseUsecase) Execute(ctx context.Context, phrase *entity.Phrase) error {
-	return u.phraseRepository.Create(ctx, phrase)
+func (uc *CreatePhraseUseCase) Create(ctx context.Context, text string, userID uint) (*entity.Phrase, error) {
+	phrase := &entity.Phrase{
+		Phrase: text,
+		UserID: userID,
+	}
+
+	phrase, err := uc.phraseRepository.Create(ctx, phrase)
+	if err != nil {
+		return nil, err
+	}
+
+	return phrase, nil
 }

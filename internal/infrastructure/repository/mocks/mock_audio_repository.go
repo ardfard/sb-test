@@ -142,21 +142,33 @@ func (_c *MockAudioRepository_GetByUserIDAndPhraseID_Call) RunAndReturn(run func
 }
 
 // Store provides a mock function with given fields: ctx, audio
-func (_m *MockAudioRepository) Store(ctx context.Context, audio *entity.Audio) error {
+func (_m *MockAudioRepository) Store(ctx context.Context, audio *entity.Audio) (*entity.Audio, error) {
 	ret := _m.Called(ctx, audio)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Store")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.Audio) error); ok {
+	var r0 *entity.Audio
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.Audio) (*entity.Audio, error)); ok {
+		return rf(ctx, audio)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.Audio) *entity.Audio); ok {
 		r0 = rf(ctx, audio)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*entity.Audio)
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, *entity.Audio) error); ok {
+		r1 = rf(ctx, audio)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MockAudioRepository_Store_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Store'
@@ -178,12 +190,12 @@ func (_c *MockAudioRepository_Store_Call) Run(run func(ctx context.Context, audi
 	return _c
 }
 
-func (_c *MockAudioRepository_Store_Call) Return(_a0 error) *MockAudioRepository_Store_Call {
-	_c.Call.Return(_a0)
+func (_c *MockAudioRepository_Store_Call) Return(_a0 *entity.Audio, _a1 error) *MockAudioRepository_Store_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockAudioRepository_Store_Call) RunAndReturn(run func(context.Context, *entity.Audio) error) *MockAudioRepository_Store_Call {
+func (_c *MockAudioRepository_Store_Call) RunAndReturn(run func(context.Context, *entity.Audio) (*entity.Audio, error)) *MockAudioRepository_Store_Call {
 	_c.Call.Return(run)
 	return _c
 }

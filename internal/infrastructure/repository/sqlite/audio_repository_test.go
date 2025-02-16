@@ -30,7 +30,7 @@ func TestSQLiteAudioRepository(t *testing.T) {
 					UserID:        1,
 					PhraseID:      1,
 				}
-				err := repo.Store(context.Background(), audio)
+				audio, err := repo.Store(context.Background(), audio)
 				return audio, err
 			},
 			check: func(t *testing.T, repo *AudioRepository, audio *entity.Audio) {
@@ -58,12 +58,13 @@ func TestSQLiteAudioRepository(t *testing.T) {
 					UserID:        1,
 					PhraseID:      1,
 				}
-				if err := repo.Store(context.Background(), audio); err != nil {
+				audio, err := repo.Store(context.Background(), audio)
+				if err != nil {
 					return nil, err
 				}
 				audio.Status = entity.AudioStatusCompleted
 				audio.StoragePath = "converted/test2.wav"
-				err := repo.Update(context.Background(), audio)
+				err = repo.Update(context.Background(), audio)
 				return audio, err
 			},
 			check: func(t *testing.T, repo *AudioRepository, audio *entity.Audio) {

@@ -23,21 +23,33 @@ func (_m *MockPhraseRepository) EXPECT() *MockPhraseRepository_Expecter {
 }
 
 // Create provides a mock function with given fields: ctx, phrase
-func (_m *MockPhraseRepository) Create(ctx context.Context, phrase *entity.Phrase) error {
+func (_m *MockPhraseRepository) Create(ctx context.Context, phrase *entity.Phrase) (*entity.Phrase, error) {
 	ret := _m.Called(ctx, phrase)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.Phrase) error); ok {
+	var r0 *entity.Phrase
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.Phrase) (*entity.Phrase, error)); ok {
+		return rf(ctx, phrase)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.Phrase) *entity.Phrase); ok {
 		r0 = rf(ctx, phrase)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*entity.Phrase)
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, *entity.Phrase) error); ok {
+		r1 = rf(ctx, phrase)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MockPhraseRepository_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -59,12 +71,12 @@ func (_c *MockPhraseRepository_Create_Call) Run(run func(ctx context.Context, ph
 	return _c
 }
 
-func (_c *MockPhraseRepository_Create_Call) Return(_a0 error) *MockPhraseRepository_Create_Call {
-	_c.Call.Return(_a0)
+func (_c *MockPhraseRepository_Create_Call) Return(_a0 *entity.Phrase, _a1 error) *MockPhraseRepository_Create_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockPhraseRepository_Create_Call) RunAndReturn(run func(context.Context, *entity.Phrase) error) *MockPhraseRepository_Create_Call {
+func (_c *MockPhraseRepository_Create_Call) RunAndReturn(run func(context.Context, *entity.Phrase) (*entity.Phrase, error)) *MockPhraseRepository_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }

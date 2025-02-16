@@ -16,17 +16,14 @@ func NewUserRepository(db *sqlx.DB) (*UserRepository, error) {
 	return &UserRepository{db: db}, nil
 }
 
-func (r *UserRepository) Create(ctx context.Context, user *entity.User) error {
-	query := `INSERT INTO users (name, created_at, updated_at) VALUES (:name, :created_at, :updated_at)`
-	_, err := r.db.NamedExecContext(ctx, query, map[string]interface{}{
-		"name":       user.Name,
-		"created_at": user.CreatedAt,
-		"updated_at": user.UpdatedAt,
-	})
+func (r *UserRepository) Create(ctx context.Context, user *entity.User) (*entity.User, error) {
+	query := `INSERT INTO users (name, created_at, updated_at) VALUES ($1, $2, $3) RETURNING id, name, created_at, updated_at`
+	var createdUser entity.User
+	err := r.db.GetContext(ctx, &createdUser, query, user.Name, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
-		return fmt.Errorf("failed to create user: %w", err)
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
-	return nil
+	return &createdUser, nil
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id uint) (*entity.User, error) {

@@ -7,14 +7,25 @@ import (
 	"github.com/ardfard/sb-test/internal/domain/repository"
 )
 
-type CreateUserUsecase struct {
+type CreateUserUseCase struct {
 	userRepository repository.UserRepository
 }
 
-func NewCreateUserUsecase(userRepository repository.UserRepository) *CreateUserUsecase {
-	return &CreateUserUsecase{userRepository: userRepository}
+func NewCreateUserUseCase(userRepository repository.UserRepository) *CreateUserUseCase {
+	return &CreateUserUseCase{
+		userRepository: userRepository,
+	}
 }
 
-func (u *CreateUserUsecase) Execute(ctx context.Context, user *entity.User) error {
-	return u.userRepository.Create(ctx, user)
+func (uc *CreateUserUseCase) Create(ctx context.Context, name string) (*entity.User, error) {
+	user := &entity.User{
+		Name: name,
+	}
+
+	user, err := uc.userRepository.Create(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
