@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ardfard/sb-test/internal/pkg/logger"
 	"github.com/ardfard/sb-test/internal/usecase"
+	"github.com/ardfard/sb-test/pkg/logger"
 	"github.com/gorilla/mux"
 )
 

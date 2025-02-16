@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/ardfard/sb-test/internal/pkg/logger"
 	"github.com/ardfard/sb-test/internal/usecase"
+	"github.com/ardfard/sb-test/pkg/logger"
 )
 
 type UserHandler struct {
