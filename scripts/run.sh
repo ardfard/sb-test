@@ -32,10 +32,3 @@ sleep 5
 
 echo -e "${GREEN}Running smoke test...${NC}"
 ./scripts/smoke_test.sh
-
-# Cleanup
-echo -e "${GREEN}Cleaning up...${NC}"
-docker stop "${CONTAINER_NAME}"
-docker rm "${CONTAINER_NAME}"
-
-echo -e "${GREEN}Done!${NC}" 
