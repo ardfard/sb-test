@@ -52,3 +52,12 @@ func (ls *LocalStorage) Download(ctx context.Context, objectName string) (io.Rea
 	}
 	return file, nil
 }
+
+// Delete deletes the file from the local filesystem.
+func (ls *LocalStorage) Delete(ctx context.Context, objectName string) error {
+	filePath := filepath.Join(ls.directory, objectName)
+	if err := os.Remove(filePath); err != nil {
+		return fmt.Errorf("failed to delete file: %v", err)
+	}
+	return nil
+}

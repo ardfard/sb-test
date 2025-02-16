@@ -17,6 +17,7 @@ import (
 type S3Storage struct {
 	uploader   *s3manager.Uploader
 	downloader *s3manager.Downloader
+	client     *s3.S3
 	bucket     string
 }
 
@@ -33,9 +34,11 @@ func NewS3Storage(region, bucket, accessKeyID, secretAccessKey string) (*S3Stora
 	}
 	uploader := s3manager.NewUploader(sess)
 	downloader := s3manager.NewDownloader(sess)
+	client := s3.New(sess)
 	return &S3Storage{
 		uploader:   uploader,
 		downloader: downloader,
+		client:     client,
 		bucket:     bucket,
 	}, nil
 }
@@ -72,4 +75,16 @@ func (s *S3Storage) Download(ctx context.Context, objectName string) (io.ReadClo
 
 	// Return a ReadCloser wrapping a reader over the buffer's bytes.
 	return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
+}
+
+// Delete deletes a file from S3.
+func (s *S3Storage) Delete(ctx context.Context, objectName string) error {
+	_, err := s.client.DeleteObjectWithContext(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(objectName),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete file from s3: %v", err)
+	}
+	return nil
 }

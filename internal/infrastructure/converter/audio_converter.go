@@ -3,7 +3,10 @@ package converter
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 
+	"github.com/ardfard/sb-test/pkg/util"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
@@ -54,4 +57,40 @@ func (ac *AudioConverter) Convert(ctx context.Context, inputPath, outputPath, ou
 	}
 
 	return nil
+}
+
+func (ac *AudioConverter) ConvertFromReader(ctx context.Context, input io.Reader, originalFormat, outputFormat string) (io.ReadCloser, error) {
+
+	inputPath, outputPath, err := util.CreateTemporaryFiles(originalFormat, outputFormat)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary files: %v", err)
+	}
+	defer os.Remove(inputPath)
+
+	inputFile, err := os.Create(inputPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temp file: %v", err)
+	}
+	defer inputFile.Close()
+
+	if _, err := io.Copy(inputFile, input); err != nil {
+		return nil, fmt.Errorf("failed to write to temp input file: %v", err)
+	}
+
+	err = ac.Convert(ctx, inputPath, outputPath, outputFormat)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert audio: %v", err)
+	}
+
+	outputFile, err := os.Open(outputPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open output file: %v", err)
+	}
+
+	return &util.CleanupReadCloser{
+		ReadCloser: outputFile,
+		Cleanup: func() error {
+			return os.Remove(outputPath)
+		},
+	}, nil
 }

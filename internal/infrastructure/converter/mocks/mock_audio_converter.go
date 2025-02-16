@@ -5,6 +5,8 @@ package mocks
 import (
 	context "context"
 
+	io "io"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -66,6 +68,67 @@ func (_c *MockAudioConverter_Convert_Call) Return(_a0 error) *MockAudioConverter
 }
 
 func (_c *MockAudioConverter_Convert_Call) RunAndReturn(run func(context.Context, string, string, string) error) *MockAudioConverter_Convert_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ConvertFromReader provides a mock function with given fields: ctx, reader, originalFormat, outputFormat
+func (_m *MockAudioConverter) ConvertFromReader(ctx context.Context, reader io.Reader, originalFormat string, outputFormat string) (io.ReadCloser, error) {
+	ret := _m.Called(ctx, reader, originalFormat, outputFormat)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ConvertFromReader")
+	}
+
+	var r0 io.ReadCloser
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, io.Reader, string, string) (io.ReadCloser, error)); ok {
+		return rf(ctx, reader, originalFormat, outputFormat)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, io.Reader, string, string) io.ReadCloser); ok {
+		r0 = rf(ctx, reader, originalFormat, outputFormat)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(io.ReadCloser)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, io.Reader, string, string) error); ok {
+		r1 = rf(ctx, reader, originalFormat, outputFormat)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockAudioConverter_ConvertFromReader_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ConvertFromReader'
+type MockAudioConverter_ConvertFromReader_Call struct {
+	*mock.Call
+}
+
+// ConvertFromReader is a helper method to define mock.On call
+//   - ctx context.Context
+//   - reader io.Reader
+//   - originalFormat string
+//   - outputFormat string
+func (_e *MockAudioConverter_Expecter) ConvertFromReader(ctx interface{}, reader interface{}, originalFormat interface{}, outputFormat interface{}) *MockAudioConverter_ConvertFromReader_Call {
+	return &MockAudioConverter_ConvertFromReader_Call{Call: _e.mock.On("ConvertFromReader", ctx, reader, originalFormat, outputFormat)}
+}
+
+func (_c *MockAudioConverter_ConvertFromReader_Call) Run(run func(ctx context.Context, reader io.Reader, originalFormat string, outputFormat string)) *MockAudioConverter_ConvertFromReader_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(io.Reader), args[2].(string), args[3].(string))
+	})
+	return _c
+}
+
+func (_c *MockAudioConverter_ConvertFromReader_Call) Return(_a0 io.ReadCloser, _a1 error) *MockAudioConverter_ConvertFromReader_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockAudioConverter_ConvertFromReader_Call) RunAndReturn(run func(context.Context, io.Reader, string, string) (io.ReadCloser, error)) *MockAudioConverter_ConvertFromReader_Call {
 	_c.Call.Return(run)
 	return _c
 }

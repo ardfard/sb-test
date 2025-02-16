@@ -13,6 +13,10 @@ import (
 	"github.com/ardfard/sb-test/internal/domain/storage"
 )
 
+const (
+	basePath = "audio"
+)
+
 type UploadAudioUseCase struct {
 	repo    repository.AudioRepository
 	storage storage.Storage
@@ -31,15 +35,17 @@ func NewUploadAudioUseCase(
 	}
 }
 
-func (uc *UploadAudioUseCase) Upload(ctx context.Context, filename string, content io.Reader) (*entity.Audio, error) {
+func (uc *UploadAudioUseCase) Upload(ctx context.Context, filename string, content io.Reader, userID uint, phraseID uint) (*entity.Audio, error) {
+	originalPath := fmt.Sprintf("%s/original/%d-%d.%s", basePath, userID, phraseID, filepath.Ext(filename))
 	audio := &entity.Audio{
-		OriginalName:   filename,
-		OriginalFormat: filepath.Ext(filename),
-		Status:         entity.AudioStatusPending,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-		UserID:         123, // TODO: Get from context
-		PhraseID:       456, // TODO: Get from context
+		OriginalName:  filename,
+		CurrentFormat: filepath.Ext(filename),
+		StoragePath:   originalPath,
+		Status:        entity.AudioStatusPending,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+		UserID:        userID,
+		PhraseID:      phraseID,
 	}
 
 	if err := uc.repo.Store(ctx, audio); err != nil {
@@ -47,7 +53,6 @@ func (uc *UploadAudioUseCase) Upload(ctx context.Context, filename string, conte
 	}
 
 	// Upload original file to storage
-	originalPath := fmt.Sprintf("original/%d%s", audio.ID, audio.OriginalFormat)
 	if err := uc.storage.Upload(ctx, originalPath, content); err != nil {
 		return nil, fmt.Errorf("failed to upload original file: %v", err)
 	}

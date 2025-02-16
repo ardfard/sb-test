@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -25,11 +26,11 @@ func TestUploadAudioUseCase_Upload(t *testing.T) {
 			filename: "test.mp3",
 			setupMocks: func(repo *repoMocks.MockAudioRepository, storage *storageMocks.MockStorage, queue *queueMocks.MockTaskQueue) {
 				repo.On("Store", mock.Anything, mock.MatchedBy(func(audio *entity.Audio) bool {
-					return audio.OriginalName == "test.mp3" && audio.OriginalFormat == ".mp3"
+					return audio.OriginalName == "test.mp3" && audio.CurrentFormat == ".mp3"
 				})).Return(nil)
 
 				storage.On("Upload", mock.Anything, mock.MatchedBy(func(path string) bool {
-					return strings.HasPrefix(path, "original/") && strings.HasSuffix(path, ".mp3")
+					return strings.HasPrefix(path, fmt.Sprintf("%s/original/", basePath)) && strings.HasSuffix(path, ".mp3")
 				}), mock.Anything).Return(nil)
 
 				queue.On("Enqueue", mock.Anything, mock.AnythingOfType("uint")).Return(nil)
@@ -75,7 +76,7 @@ func TestUploadAudioUseCase_Upload(t *testing.T) {
 
 			uc := NewUploadAudioUseCase(repo, storage, queue)
 			content := strings.NewReader("test content")
-			audio, err := uc.Upload(context.Background(), tt.filename, content)
+			audio, err := uc.Upload(context.Background(), tt.filename, content, 1, 1)
 
 			if tt.expectedError {
 				assert.Error(t, err)

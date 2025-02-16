@@ -77,9 +77,10 @@ func run(cmd *cobra.Command, args []string) error {
 	// Initialize use cases
 	uploadAudioUseCase := usecase.NewUploadAudioUseCase(repo, storageInstance, queueInstance)
 	convertAudioUseCase := usecase.NewConvertAudioUseCase(repo, storageInstance, converterInstance)
+	downloadAudioUseCase := usecase.NewDownloadAudioUseCase(repo, storageInstance, converterInstance)
 
 	// Initialize handler.
-	audioHandler := handler.NewAudioHandler(uploadAudioUseCase)
+	audioHandler := handler.NewAudioHandler(uploadAudioUseCase, downloadAudioUseCase)
 
 	// Initialize the router with all defined routes.
 	r := router.SetupRoutes(audioHandler)

@@ -4,14 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 
 	"github.com/ardfard/sb-test/internal/domain/converter"
 	"github.com/ardfard/sb-test/internal/domain/entity"
 	"github.com/ardfard/sb-test/internal/domain/repository"
 	"github.com/ardfard/sb-test/internal/domain/storage"
-	"github.com/ardfard/sb-test/pkg/util"
 )
 
 type ConvertAudioUseCase struct {
@@ -32,67 +29,52 @@ func NewConvertAudioUseCase(
 	}
 }
 
+const targetFormat = "wav"
+
 func (uc *ConvertAudioUseCase) Convert(ctx context.Context, audioID uint) error {
 	audio, err := uc.repo.GetByID(ctx, audioID)
 	if err != nil {
 		return fmt.Errorf("failed to get audio: %v", err)
 	}
 
+	originalPath := audio.StoragePath
 	// Update status to converting
 	audio.Status = entity.AudioStatusConverting
 	if err := uc.repo.Update(ctx, audio); err != nil {
 		return fmt.Errorf("failed to update audio status: %v", err)
 	}
 
-	// Create temporary files
-	inputPath, outputPath, err := util.CreateTemporaryFiles(audio, "flac")
-	defer os.Remove(inputPath)
-	defer os.Remove(outputPath)
-
-	if err != nil {
-		return uc.handleError(ctx, audio, fmt.Sprintf("failed to create temporary files: %v", err))
-	}
-
 	// Download original file
-	reader, err := uc.storage.Download(ctx, audio.StoragePath)
+	reader, err := uc.storage.Download(ctx, originalPath)
 	if err != nil {
 		return uc.handleError(ctx, audio, fmt.Sprintf("failed to download file: %v", err))
 	}
 	defer reader.Close()
 
-	// Save to temporary file
-	inputFile, err := os.Create(inputPath)
-	if err != nil {
-		return uc.handleError(ctx, audio, fmt.Sprintf("failed to create input file: %v", err))
-	}
-	defer inputFile.Close()
-
-	if _, err := io.Copy(inputFile, reader); err != nil {
-		return uc.handleError(ctx, audio, fmt.Sprintf("failed to save input file: %v", err))
-	}
-
 	// Convert the audio
-	if err := uc.converter.Convert(ctx, inputPath, outputPath, "flac"); err != nil {
+	output, err := uc.converter.ConvertFromReader(ctx, reader, audio.CurrentFormat, targetFormat)
+	if err != nil {
 		return uc.handleError(ctx, audio, fmt.Sprintf("failed to convert audio: %v", err))
 	}
+	defer output.Close()
 
 	// Upload converted file
-	outputFile, err := os.Open(outputPath)
-	if err != nil {
-		return uc.handleError(ctx, audio, fmt.Sprintf("failed to open converted file: %v", err))
-	}
-	defer outputFile.Close()
-
-	wavPath := fmt.Sprintf("converted/%d.wav", audio.ID)
-	if err := uc.storage.Upload(ctx, wavPath, outputFile); err != nil {
+	convertedPath := fmt.Sprintf("%s/converted/%d.%s", basePath, audio.ID, targetFormat)
+	if err := uc.storage.Upload(ctx, convertedPath, output); err != nil {
 		return uc.handleError(ctx, audio, fmt.Sprintf("failed to upload converted file: %v", err))
 	}
 
 	// Update audio status to completed
 	audio.Status = entity.AudioStatusCompleted
-	audio.StoragePath = wavPath
+	audio.StoragePath = convertedPath
+	audio.CurrentFormat = targetFormat
 	if err := uc.repo.Update(ctx, audio); err != nil {
 		return fmt.Errorf("failed to update audio status: %v", err)
+	}
+
+	// delete the original file
+	if err := uc.storage.Delete(ctx, originalPath); err != nil {
+		return uc.handleError(ctx, audio, fmt.Sprintf("failed to delete original file: %v", err))
 	}
 
 	return nil

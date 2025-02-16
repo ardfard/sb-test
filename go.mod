@@ -41,6 +41,7 @@ require (
 
 require (
 	github.com/mattn/go-sqlite3 v1.14.22
+	github.com/oklog/ulid/v2 v2.1.0
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 )

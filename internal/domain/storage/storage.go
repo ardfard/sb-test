@@ -11,4 +11,6 @@ type Storage interface {
 	Upload(ctx context.Context, objectName string, reader io.Reader) error
 	// Download downloads the data from the specified object name.
 	Download(ctx context.Context, objectName string) (io.ReadCloser, error)
+	// Delete deletes the data from the specified object name.
+	Delete(ctx context.Context, objectName string) error
 }

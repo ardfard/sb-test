@@ -20,15 +20,15 @@ func TestSQLiteAudioRepository(t *testing.T) {
 			name: "Store and retrieve audio",
 			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
 				audio := &entity.Audio{
-					ID:             1,
-					OriginalName:   "test.m4a",
-					OriginalFormat: ".m4a",
-					StoragePath:    "original/test.m4a",
-					Status:         entity.AudioStatusPending,
-					CreatedAt:      time.Now().UTC(),
-					UpdatedAt:      time.Now().UTC(),
-					UserID:         1,
-					PhraseID:       1,
+					ID:            1,
+					OriginalName:  "test.m4a",
+					CurrentFormat: ".m4a",
+					StoragePath:   "original/test.m4a",
+					Status:        entity.AudioStatusPending,
+					CreatedAt:     time.Now().UTC(),
+					UpdatedAt:     time.Now().UTC(),
+					UserID:        1,
+					PhraseID:      1,
 				}
 				err := repo.Store(context.Background(), audio)
 				return audio, err
@@ -48,15 +48,15 @@ func TestSQLiteAudioRepository(t *testing.T) {
 			name: "Update audio status",
 			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
 				audio := &entity.Audio{
-					ID:             2,
-					OriginalName:   "test2.m4a",
-					OriginalFormat: ".m4a",
-					StoragePath:    "original/test2.m4a",
-					Status:         entity.AudioStatusPending,
-					CreatedAt:      time.Now().UTC(),
-					UpdatedAt:      time.Now().UTC(),
-					UserID:         1,
-					PhraseID:       1,
+					ID:            2,
+					OriginalName:  "test2.m4a",
+					CurrentFormat: ".m4a",
+					StoragePath:   "original/test2.m4a",
+					Status:        entity.AudioStatusPending,
+					CreatedAt:     time.Now().UTC(),
+					UpdatedAt:     time.Now().UTC(),
+					UserID:        1,
+					PhraseID:      1,
 				}
 				if err := repo.Store(context.Background(), audio); err != nil {
 					return nil, err
@@ -95,10 +95,10 @@ func TestSQLiteAudioRepository(t *testing.T) {
 			name: "Update non-existent audio",
 			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
 				audio := &entity.Audio{
-					ID:             9999,
-					OriginalName:   "nonexistent.m4a",
-					OriginalFormat: ".m4a",
-					Status:         entity.AudioStatusCompleted,
+					ID:            9999,
+					OriginalName:  "nonexistent.m4a",
+					CurrentFormat: ".m4a",
+					Status:        entity.AudioStatusCompleted,
 				}
 				err := repo.Update(context.Background(), audio)
 				return audio, err

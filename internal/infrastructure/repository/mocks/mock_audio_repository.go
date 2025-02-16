@@ -81,6 +81,66 @@ func (_c *MockAudioRepository_GetByID_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
+// GetByUserIDAndPhraseID provides a mock function with given fields: ctx, userID, phraseID
+func (_m *MockAudioRepository) GetByUserIDAndPhraseID(ctx context.Context, userID uint, phraseID uint) (*entity.Audio, error) {
+	ret := _m.Called(ctx, userID, phraseID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByUserIDAndPhraseID")
+	}
+
+	var r0 *entity.Audio
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint, uint) (*entity.Audio, error)); ok {
+		return rf(ctx, userID, phraseID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint, uint) *entity.Audio); ok {
+		r0 = rf(ctx, userID, phraseID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*entity.Audio)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint, uint) error); ok {
+		r1 = rf(ctx, userID, phraseID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockAudioRepository_GetByUserIDAndPhraseID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByUserIDAndPhraseID'
+type MockAudioRepository_GetByUserIDAndPhraseID_Call struct {
+	*mock.Call
+}
+
+// GetByUserIDAndPhraseID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uint
+//   - phraseID uint
+func (_e *MockAudioRepository_Expecter) GetByUserIDAndPhraseID(ctx interface{}, userID interface{}, phraseID interface{}) *MockAudioRepository_GetByUserIDAndPhraseID_Call {
+	return &MockAudioRepository_GetByUserIDAndPhraseID_Call{Call: _e.mock.On("GetByUserIDAndPhraseID", ctx, userID, phraseID)}
+}
+
+func (_c *MockAudioRepository_GetByUserIDAndPhraseID_Call) Run(run func(ctx context.Context, userID uint, phraseID uint)) *MockAudioRepository_GetByUserIDAndPhraseID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint), args[2].(uint))
+	})
+	return _c
+}
+
+func (_c *MockAudioRepository_GetByUserIDAndPhraseID_Call) Return(_a0 *entity.Audio, _a1 error) *MockAudioRepository_GetByUserIDAndPhraseID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockAudioRepository_GetByUserIDAndPhraseID_Call) RunAndReturn(run func(context.Context, uint, uint) (*entity.Audio, error)) *MockAudioRepository_GetByUserIDAndPhraseID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Store provides a mock function with given fields: ctx, audio
 func (_m *MockAudioRepository) Store(ctx context.Context, audio *entity.Audio) error {
 	ret := _m.Called(ctx, audio)
