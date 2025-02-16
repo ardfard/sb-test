@@ -19,5 +19,6 @@ func SetupRoutes(audioHandler *handler.AudioHandler, userHandler *handler.UserHa
 	// Phrase routes
 	router.HandleFunc("/users/{user_id}/phrases", phraseHandler.Create).Methods(http.MethodPost)
 
+	router.HandleFunc("/health", handler.HealthHandler).Methods("GET")
 	return router
 }
