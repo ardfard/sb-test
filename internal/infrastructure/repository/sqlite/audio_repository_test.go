@@ -1,4 +1,4 @@
-package repository
+package sqlite
 
 import (
 	"context"
@@ -12,13 +12,13 @@ import (
 func TestSQLiteAudioRepository(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func(*SQLiteAudioRepository) (*entity.Audio, error)
-		check   func(*testing.T, *SQLiteAudioRepository, *entity.Audio)
+		setup   func(*AudioRepository) (*entity.Audio, error)
+		check   func(*testing.T, *AudioRepository, *entity.Audio)
 		wantErr bool
 	}{
 		{
 			name: "Store and retrieve audio",
-			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
+			setup: func(repo *AudioRepository) (*entity.Audio, error) {
 				audio := &entity.Audio{
 					ID:            1,
 					OriginalName:  "test.m4a",
@@ -33,7 +33,7 @@ func TestSQLiteAudioRepository(t *testing.T) {
 				err := repo.Store(context.Background(), audio)
 				return audio, err
 			},
-			check: func(t *testing.T, repo *SQLiteAudioRepository, audio *entity.Audio) {
+			check: func(t *testing.T, repo *AudioRepository, audio *entity.Audio) {
 				stored, err := repo.GetByID(context.Background(), audio.ID)
 				if err != nil {
 					t.Fatalf("GetByID failed: %v", err)
@@ -46,7 +46,7 @@ func TestSQLiteAudioRepository(t *testing.T) {
 		},
 		{
 			name: "Update audio status",
-			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
+			setup: func(repo *AudioRepository) (*entity.Audio, error) {
 				audio := &entity.Audio{
 					ID:            2,
 					OriginalName:  "test2.m4a",
@@ -66,7 +66,7 @@ func TestSQLiteAudioRepository(t *testing.T) {
 				err := repo.Update(context.Background(), audio)
 				return audio, err
 			},
-			check: func(t *testing.T, repo *SQLiteAudioRepository, audio *entity.Audio) {
+			check: func(t *testing.T, repo *AudioRepository, audio *entity.Audio) {
 				updated, err := repo.GetByID(context.Background(), audio.ID)
 				if err != nil {
 					t.Fatalf("GetByID after update failed: %v", err)
@@ -80,10 +80,10 @@ func TestSQLiteAudioRepository(t *testing.T) {
 		},
 		{
 			name: "Get non-existent audio",
-			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
+			setup: func(repo *AudioRepository) (*entity.Audio, error) {
 				return &entity.Audio{ID: 9999}, nil
 			},
-			check: func(t *testing.T, repo *SQLiteAudioRepository, audio *entity.Audio) {
+			check: func(t *testing.T, repo *AudioRepository, audio *entity.Audio) {
 				_, err := repo.GetByID(context.Background(), audio.ID)
 				if err == nil {
 					t.Error("expected error when fetching nonexistent audio, got nil")
@@ -93,7 +93,7 @@ func TestSQLiteAudioRepository(t *testing.T) {
 		},
 		{
 			name: "Update non-existent audio",
-			setup: func(repo *SQLiteAudioRepository) (*entity.Audio, error) {
+			setup: func(repo *AudioRepository) (*entity.Audio, error) {
 				audio := &entity.Audio{
 					ID:            9999,
 					OriginalName:  "nonexistent.m4a",
@@ -103,7 +103,7 @@ func TestSQLiteAudioRepository(t *testing.T) {
 				err := repo.Update(context.Background(), audio)
 				return audio, err
 			},
-			check: func(t *testing.T, repo *SQLiteAudioRepository, audio *entity.Audio) {
+			check: func(t *testing.T, repo *AudioRepository, audio *entity.Audio) {
 				// No additional checks needed as we expect the setup to fail
 			},
 			wantErr: true,
@@ -117,7 +117,7 @@ func TestSQLiteAudioRepository(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create repository: %v", err)
 			}
-			repo, err := NewSQLiteAudioRepository(db)
+			repo, err := NewAudioRepository(db)
 			if err != nil {
 				t.Fatalf("failed to create repository: %v", err)
 			}

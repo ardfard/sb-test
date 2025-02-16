@@ -1,4 +1,4 @@
-package repository
+package sqlite
 
 import (
 	"context"
@@ -12,47 +12,20 @@ import (
 )
 
 // SQLiteAudioRepository is a repository for audio operations using SQLite.
-type SQLiteAudioRepository struct {
+type AudioRepository struct {
 	db *sqlx.DB
 }
 
-// NewSQLiteAudioRepository creates a new SQLiteAudioRepository.
-func NewSQLiteAudioRepository(db *sqlx.DB) (*SQLiteAudioRepository, error) {
-	if err := createTable(db); err != nil {
-		return nil, fmt.Errorf("failed to create table: %v", err)
-	}
+// NewAudioRepository creates a new AudioRepository.
+func NewAudioRepository(db *sqlx.DB) (*AudioRepository, error) {
 
-	return &SQLiteAudioRepository{
+	return &AudioRepository{
 		db: db,
 	}, nil
 }
 
-// createTable creates the audios table if it doesn't exist.
-func createTable(db *sqlx.DB) error {
-	query := `
-	CREATE TABLE IF NOT EXISTS audios (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		original_name TEXT NOT NULL,
-		current_format TEXT NOT NULL,
-		storage_path TEXT,
-		status TEXT NOT NULL,
-		created_at DATETIME NOT NULL,
-		updated_at DATETIME NOT NULL,
-		error TEXT,
-		user_id INTEGER NOT NULL,
-		phrase_id INTEGER NOT NULL
-	);`
-
-	// Create a unique constraint on user_id and phrase_id
-	query += `
-	CREATE UNIQUE INDEX IF NOT EXISTS idx_user_phrase ON audios (user_id, phrase_id);`
-
-	_, err := db.Exec(query)
-	return err
-}
-
 // Store stores an audio entity in the database.
-func (r *SQLiteAudioRepository) Store(ctx context.Context, audio *entity.Audio) error {
+func (r *AudioRepository) Store(ctx context.Context, audio *entity.Audio) error {
 	query := `
 	INSERT INTO audios (
 		id, original_name, current_format, storage_path, 
@@ -80,7 +53,7 @@ func (r *SQLiteAudioRepository) Store(ctx context.Context, audio *entity.Audio) 
 }
 
 // GetByID retrieves an audio entity from the database by its ID.
-func (r *SQLiteAudioRepository) GetByID(ctx context.Context, id uint) (*entity.Audio, error) {
+func (r *AudioRepository) GetByID(ctx context.Context, id uint) (*entity.Audio, error) {
 	query := `
 	SELECT id, original_name, current_format, storage_path, status, 
 		created_at, updated_at, error, user_id, phrase_id
@@ -93,7 +66,7 @@ func (r *SQLiteAudioRepository) GetByID(ctx context.Context, id uint) (*entity.A
 }
 
 // Update updates an audio entity in the database.
-func (r *SQLiteAudioRepository) Update(ctx context.Context, audio *entity.Audio) error {
+func (r *AudioRepository) Update(ctx context.Context, audio *entity.Audio) error {
 	query := `
 	UPDATE audios 
 	SET original_name = :original_name,
@@ -131,7 +104,7 @@ func (r *SQLiteAudioRepository) Update(ctx context.Context, audio *entity.Audio)
 }
 
 // GetByUserIDAndPhraseID retrieves an audio entity from the database by user ID and phrase ID.
-func (r *SQLiteAudioRepository) GetByUserIDAndPhraseID(ctx context.Context, userID uint, phraseID uint) (*entity.Audio, error) {
+func (r *AudioRepository) GetByUserIDAndPhraseID(ctx context.Context, userID uint, phraseID uint) (*entity.Audio, error) {
 	query := `
 	SELECT id, original_name, current_format, storage_path, status, 
 		created_at, updated_at, error, user_id, phrase_id
@@ -144,6 +117,6 @@ func (r *SQLiteAudioRepository) GetByUserIDAndPhraseID(ctx context.Context, user
 }
 
 // Close closes the SQLite database connection.
-func (r *SQLiteAudioRepository) Close() error {
+func (r *AudioRepository) Close() error {
 	return r.db.Close()
 }
