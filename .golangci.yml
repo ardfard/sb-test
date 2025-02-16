@@ -12,8 +12,6 @@ linters:
     - goimports
     - misspell
     - unparam
-  disable:
-    - golint
 
 linters-settings:
   revive:
