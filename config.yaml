@@ -5,5 +5,3 @@ storage:
     directory: "./uploads"
 sqlite:
   db_path: "./audio.db"
-worker:
-  num_workers: 2

@@ -38,6 +38,9 @@ There are few assumptions that were made when designing the service:
 - The audio file is always converted to wav format for long term storage in the object storage. After the conversion, the original audio file is deleted from the object storage.
 - When downloading the audio file, the service will convert the audio file to the requested format from the WAV format or from the original format if it's not yet deleted from the object storage.
 - The service uses a background processing to convert the audio files to the wav format when uploading for better response time and reliability.
+- There are no encryption or compression for the audio files stored in the object storage.
+- The service does not support caching of the audio files like CDN or proxy.
+- To make running the service easier, the conversion worker is run in the same process as the server. In a production environment, the conversion worker should be run in a separate process to avoid the single point of failure.
 
 ## Using the service
 
@@ -78,6 +81,25 @@ Currently the service supports the following formats:
 ```bash
 make test
 ```
+
+## Configuring the service
+
+The service is configured using the `config.yaml` file. You can find the configuration file in the root of the project.
+
+```yaml
+server_address: ":8080" # The address the server will listen on
+storage:
+  type: s3 # The type of storage to use, can be "s3" or "local"
+  s3:
+    bucket: my-bucket # The name of the bucket to use for storage
+    region: us-east-1 # The region of the bucket
+    access_key_id: my-access-key-id # The access key id for the bucket
+    secret_access_key: my-secret-access-key # The secret access key for the bucket
+  local:
+    directory: ./uploads # The directory to use for local storage
+sqlite:
+  db_path: ./audio.db # The path to the sqlite database file
+``` 
 
 ## Architecture
 
@@ -160,4 +182,4 @@ The current implementation is a simple one and no way near production ready. The
 - Use CDN for caching the audio file. We can preconvert the audio file to the most popular formats after the upload and cache them in the CDN.
 - Add authentication and authorization
 - For long term storage, use a more efficient lossless format like [Opus](https://opus-codec.org/) or [FLAC](https://xiph.org/flac/).
-
+- Separate the Server and the Worker into separate deployment units to avoid the single point of failure and it can be scaled independently.

@@ -52,7 +52,6 @@ worker:
 				assert.Equal(t, "test-secret", cfg.Storage.S3.SecretAccessKey)
 				assert.Equal(t, "/tmp/storage", cfg.Storage.Local.Directory)
 				assert.Equal(t, "/tmp/app.db", cfg.SQLite.DBPath)
-				assert.Equal(t, 4, cfg.Worker.NumWorkers)
 			},
 		},
 		{

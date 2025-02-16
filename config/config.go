@@ -31,9 +31,6 @@ type Config struct {
 	SQLite        struct {
 		DBPath string `mapstructure:"db_path"`
 	} `mapstructure:"sqlite"`
-	Worker struct {
-		NumWorkers int `mapstructure:"num_workers"`
-	} `mapstructure:"worker"`
 }
 
 // LoadConfig reads configuration from config.yaml (or other supported formats) in the current directory.
